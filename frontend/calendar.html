@@ -1,0 +1,202 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>DLIV — Calendar</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="slideshow.css" />
+  <style>
+    body { display: flex; min-height: 100vh; margin: 0; font-family: Arial, sans-serif; }
+
+    #sidenav {
+      width: 220px; min-width: 220px; background: #1e3a5f;
+      display: flex; flex-direction: column; padding: 1.5rem 0;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.12); transition: transform 0.25s;
+    }
+    .nav-title { color: white; font-size: 1.4rem; font-weight: 700; letter-spacing: 0.08em; padding: 0 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .nav-title span { color: rgba(255,255,255,0.4); font-size: 0.7rem; font-weight: 400; display: block; margin-top: 0.1rem; }
+    .nav-section { margin-top: 1.4rem; }
+    .nav-section-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.80); padding: 0 0 0.4rem 1.25rem; margin: 0 1.25rem 0.35rem 0; border-bottom: 1px solid rgba(255,255,255,0.18); }
+    .nav-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 1.25rem; color: rgba(255,255,255,0.75); text-decoration: none; font-size: 0.9rem; cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent; }
+    .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
+    .nav-item.active { background: rgba(255,255,255,0.12); color: white; border-left-color: white; font-weight: 600; }
+    .nav-item .icon { font-size: 1rem; width: 1.2rem; text-align: center; }
+    .nav-sub-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1.25rem 0.4rem 2.9rem; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.83rem; cursor: pointer; transition: all 0.15s; }
+    .nav-sub-item:hover { color: white; background: rgba(255,255,255,0.06); }
+    .nav-sub-item::before { content: "↗"; font-size: 0.7rem; opacity: 0.5; margin-right: 0.2rem; }
+    .nav-spacer { flex: 1; }
+    .nav-bottom { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem; color: rgba(255,255,255,0.3); }
+    #hamburger { display: none; position: fixed; top: 0.75rem; left: 0.75rem; z-index: 200; background: #1e3a5f; color: white; border: none; border-radius: 8px; padding: 0.4rem 0.7rem; font-size: 1.2rem; cursor: pointer; }
+    #nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 99; }
+    #main-content { margin-left: 220px; flex: 1; padding: 1.5rem; }
+
+    #cal-login { max-width: 340px; }
+    #cal-login input { display: block; width: 100%; margin: 0.4rem 0; padding: 0.5rem 0.75rem; box-sizing: border-box; border: 1.5px solid #dde3ec; border-radius: 20px; font-size: 0.9rem; outline: none; transition: border-color 0.15s; }
+    #cal-login input:focus { border-color: #1e3a5f; }
+    #cal-login button { font-size: 0.9rem; padding: 0.45rem 1.1rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; margin-top: 0.4rem; border: 1.5px solid #1e3a5f; background: #1e3a5f; color: white; }
+    #cal-login-error { color: #e11d48; font-size: 0.85rem; margin-top: 0.3rem; }
+
+    #cal-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    #cal-month-title { font-size: 1.2rem; font-weight: 700; color: #1e3a5f; flex: 1; }
+    #cal-header button { font-size: 0.82rem; padding: 0.35rem 0.9rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; border: 1.5px solid #1e3a5f; background: transparent; color: #1e3a5f; transition: all 0.15s; }
+    #cal-header button:hover { background: #1e3a5f; color: white; }
+    #cal-signout { border-color: #ddd !important; color: #888 !important; }
+    #cal-signout:hover { border-color: #e11d48 !important; color: #e11d48 !important; background: transparent !important; }
+
+    #cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+    .cal-dow { background: #1e3a5f; color: white; text-align: center; font-size: 0.75rem; font-weight: 700; padding: 0.4rem 0; letter-spacing: 0.05em; }
+    .cal-cell { background: white; min-height: 90px; padding: 0.25rem 0.35rem; cursor: pointer; transition: background 0.12s; }
+    .cal-cell:hover { background: #f0f5ff; }
+    .cal-cell--empty { background: #f8fafc; cursor: default; pointer-events: none; }
+    .cal-cell--today { background: #eef4ff; }
+    .cal-cell--today:hover { background: #ddeaff; }
+    .cal-cell--today .cal-day-num { color: #1e3a5f; font-weight: 800; }
+    .cal-day-num { font-size: 0.8rem; color: #64748b; font-weight: 600; line-height: 1.4; display: flex; align-items: center; justify-content: space-between; }
+    .cal-day-add-hint { font-size: 0.65rem; color: #cbd5e1; font-weight: 400; opacity: 0; transition: opacity 0.15s; }
+    .cal-cell:hover .cal-day-add-hint { opacity: 1; color: #1e3a5f; }
+    .cal-events { margin-top: 0.25rem; }
+    .cal-event { font-size: 0.7rem; background: #1e3a5f; color: white; border-radius: 3px; padding: 0.1rem 0.3rem; margin-bottom: 2px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background 0.15s; }
+    .cal-event:hover { background: #16304f; }
+    .cal-event-time { opacity: 0.75; }
+    .cal-loading, .cal-error { grid-column: 1/-1; padding: 2rem; text-align: center; color: #94a3b8; font-size: 0.9rem; }
+    .cal-error { color: #e11d48; }
+
+    #cal-modal { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; }
+    #cal-modal-box { background: white; border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 400px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); margin: 1rem; }
+    #cal-modal-box h3 { margin: 0 0 1rem; color: #1e3a5f; font-size: 1rem; }
+    #cal-modal-box input, #cal-modal-box textarea { display: block; width: 100%; box-sizing: border-box; margin: 0.35rem 0; padding: 0.45rem 0.75rem; border: 1.5px solid #dde3ec; border-radius: 8px; font-size: 0.88rem; font-family: Arial, sans-serif; outline: none; transition: border-color 0.15s; }
+    #cal-modal-box input:focus, #cal-modal-box textarea:focus { border-color: #1e3a5f; }
+    #cal-modal-box label { font-size: 0.75rem; color: #64748b; display: block; margin-top: 0.6rem; }
+    #cal-modal-actions { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+    #cal-modal-actions button { font-size: 0.82rem; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; border: 1.5px solid #1e3a5f; transition: all 0.15s; }
+    #cal-modal-save { background: #1e3a5f; color: white; }
+    #cal-modal-save:hover { background: #16304f; }
+    #cal-modal-cancel { background: transparent; color: #1e3a5f; }
+    #cal-modal-cancel:hover { background: #1e3a5f; color: white; }
+    #cal-modal-delete { background: transparent; color: #e11d48; border-color: #e11d48; margin-left: auto; }
+    #cal-modal-delete:hover { background: #e11d48; color: white; }
+    #cal-modal-createdby { font-size: 0.75rem; color: #94a3b8; margin-top: 0.75rem; }
+
+    @media (max-width: 600px) {
+      #sidenav { transform: translateX(-100%); }
+      #sidenav.open { transform: translateX(0); }
+      #hamburger { display: block; }
+      #nav-overlay.visible { display: block; }
+      #main-content { margin-left: 0; padding: 1rem; padding-top: 3.5rem; }
+      .cal-cell { min-height: 60px; }
+      .cal-event { font-size: 0.62rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <button id="hamburger" onclick="toggleNav()">☰</button>
+  <div id="nav-overlay" onclick="toggleNav()"></div>
+
+  <nav id="sidenav">
+    <div class="nav-title">DLIV <span>Family &amp; Friends</span></div>
+    <div class="nav-section">
+      <div class="nav-section-label">Media</div>
+      <a class="nav-item" href="/index.html"><span class="icon">🎞</span> Slideshows</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">College Funds</div>
+      <a class="nav-sub-item" href="https://digital.fidelity.com/prgw/digital/familygifting/mlgLandingPage?uuid=af6a9494832f4c9aaab448d3a7c55a25" target="_blank" rel="noopener noreferrer">Scouty</a>
+      <a class="nav-sub-item" href="https://digital.fidelity.com/prgw/digital/familygifting/mlgLandingPage?uuid=05fba5286cd04e8c85f55e363245f948" target="_blank" rel="noopener noreferrer">Slate</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Private</div>
+      <a class="nav-item" href="/index.html"><span class="icon">🔒</span> Dropbox</a>
+      <div class="nav-item active"><span class="icon">📅</span> Calendar</div>
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="nav-bottom">&copy; 2020 DLIV</div>
+  </nav>
+
+  <main id="main-content">
+    <div id="cal-login" style="display:none">
+      <h3>Sign In</h3>
+      <input type="email" id="cal-email" placeholder="Email" />
+      <div style="position:relative;">
+        <input type="password" id="cal-password" placeholder="Password" style="padding-right:2.5rem;" />
+        <span onclick="togglePwd('cal-password',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:0.85rem;color:#94a3b8;user-select:none;">Show</span>
+      </div>
+      <button onclick="handleCalSignIn()">Sign In</button>
+      <p id="cal-login-error"></p>
+    </div>
+
+    <div id="cal-content" style="display:none">
+      <div id="cal-header">
+        <button onclick="calendarPrevMonth()">&#8592; Prev</button>
+        <div id="cal-month-title"></div>
+        <button onclick="calendarNextMonth()">Next &#8594;</button>
+        <button id="cal-signout" onclick="handleCalSignOut()">Sign Out</button>
+      </div>
+      <div id="cal-grid"></div>
+    </div>
+  </main>
+
+  <div id="cal-modal">
+    <div id="cal-modal-box">
+      <h3 id="cal-modal-title">Add event</h3>
+      <input type="hidden" id="cal-form-id" />
+      <label>Title</label>
+      <input type="text" id="cal-form-title" placeholder="Event title" />
+      <label>Description</label>
+      <textarea id="cal-form-desc" rows="2" placeholder="Optional description"></textarea>
+      <label>Start</label>
+      <input type="datetime-local" id="cal-form-start" />
+      <label>End</label>
+      <input type="datetime-local" id="cal-form-end" />
+      <div id="cal-modal-createdby"></div>
+      <div id="cal-modal-actions">
+        <button id="cal-modal-save"   onclick="saveCalEvent()">Save</button>
+        <button id="cal-modal-cancel" onclick="closeCalModal()">Cancel</button>
+        <button id="cal-modal-delete" onclick="deleteCalEvent()" style="display:none">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./calendar.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      import("./calendar.js").then(() => {
+        window.initCalendar();
+        const { isSignedIn } = window._authModule ?? {};
+        // auth state handled by calendar.js initCalendar
+      });
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Show login or calendar based on stored token
+      import("./auth.js").then(({ isSignedIn }) => {
+        if (isSignedIn()) {
+          document.getElementById("cal-login").style.display   = "none";
+          document.getElementById("cal-content").style.display = "block";
+          window.initCalendar();
+        } else {
+          document.getElementById("cal-login").style.display   = "block";
+          document.getElementById("cal-content").style.display = "none";
+        }
+      });
+    });
+
+    document.getElementById("cal-modal").addEventListener("click", (e) => {
+      if (e.target === document.getElementById("cal-modal")) closeCalModal();
+    });
+
+    function toggleNav() {
+      document.getElementById("sidenav").classList.toggle("open");
+      document.getElementById("nav-overlay").classList.toggle("visible");
+    }
+
+    function togglePwd(id, el) {
+      const input = document.getElementById(id);
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      el.textContent = show ? "Hide" : "Show";
+    }
+  </script>
+</body>
+</html>

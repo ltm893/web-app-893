@@ -1,0 +1,4 @@
+# dliv_outputs.json is generated at build time from Amplify env vars
+# Never commit real AWS resource IDs
+frontend/dliv_outputs.json
+.DS_Store

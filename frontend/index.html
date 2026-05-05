@@ -1,0 +1,240 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>DLIV</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="slideshow.css" />
+  <script src="./albumSlideShow.js"></script>
+  <style>
+    body { display: flex; min-height: 100vh; }
+
+    #sidenav {
+      width: 220px; min-width: 220px; background: #1e3a5f;
+      display: flex; flex-direction: column; padding: 1.5rem 0;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.12); transition: transform 0.25s;
+    }
+    .nav-title { color: white; font-size: 1.4rem; font-weight: 700; letter-spacing: 0.08em; padding: 0 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .nav-title span { color: rgba(255,255,255,0.4); font-size: 0.7rem; font-weight: 400; display: block; margin-top: 0.1rem; }
+    .nav-section { margin-top: 1.4rem; }
+    .nav-section-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.80); padding: 0 0 0.4rem 1.25rem; margin: 0 1.25rem 0.35rem 0; border-bottom: 1px solid rgba(255,255,255,0.18); }
+    .nav-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 1.25rem; color: rgba(255,255,255,0.75); text-decoration: none; font-size: 0.9rem; cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent; }
+    .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
+    .nav-item.active { background: rgba(255,255,255,0.12); color: white; border-left-color: white; font-weight: 600; }
+    .nav-item .icon { font-size: 1rem; width: 1.2rem; text-align: center; }
+    .nav-sub-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1.25rem 0.4rem 2.9rem; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.83rem; cursor: pointer; transition: all 0.15s; }
+    .nav-sub-item:hover { color: white; background: rgba(255,255,255,0.06); }
+    .nav-sub-item::before { content: "↗"; font-size: 0.7rem; opacity: 0.5; margin-right: 0.2rem; }
+    .nav-spacer { flex: 1; }
+    .nav-bottom { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem; color: rgba(255,255,255,0.3); }
+
+    #hamburger { display: none; position: fixed; top: 0.75rem; left: 0.75rem; z-index: 200; background: #1e3a5f; color: white; border: none; border-radius: 8px; padding: 0.4rem 0.7rem; font-size: 1.2rem; cursor: pointer; }
+    #nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 99; }
+
+    #main-content { margin-left: 220px; flex: 1; padding: 1.5rem; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ── Private section ── */
+    #private-section { max-width: 800px; font-family: Arial, sans-serif; }
+    #private-panel { margin-top: 1rem; background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    #private-login input { display: block; width: 100%; margin: 0.4rem 0; padding: 0.5rem 0.75rem; box-sizing: border-box; border: 1.5px solid #dde3ec; border-radius: 20px; font-size: 0.9rem; outline: none; transition: border-color 0.15s; }
+    #private-login input:focus { border-color: #1e3a5f; }
+    #private-login button, #private-browser button { font-size: 0.82rem; padding: 0.35rem 0.9rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; margin-top: 0.4rem; transition: all 0.15s; border: 1.5px solid #1e3a5f; background: transparent; color: #1e3a5f; }
+    #private-login button:hover, #private-browser button:hover { background: #1e3a5f; color: white; }
+    #private-browser #download-selected-btn, #private-login button[onclick="handleSignIn()"] { background: #1e3a5f; color: white; border-color: #1e3a5f; }
+    #private-browser #download-selected-btn:hover, #private-login button[onclick="handleSignIn()"]:hover { background: #16304f; border-color: #16304f; }
+    #private-browser button[onclick="handleSignOut()"] { border-color: #ddd; color: #888; }
+    #private-browser button[onclick="handleSignOut()"]:hover { border-color: #e11d48; color: #e11d48; background: transparent; }
+    #private-breadcrumb { color: #bbb; font-size: 0.83rem; margin: 0.3rem 0 0; }
+    #private-breadcrumb a { color: #1e3a5f; text-decoration: none; font-size: 0.83rem; font-weight: 500; }
+    #private-breadcrumb a:hover { text-decoration: underline; }
+    #private-file-list { list-style: none; padding: 0; margin-top: 0.5rem; }
+    #private-file-list li { padding: 0.4rem 0; border-bottom: 1px solid #f0f4f8; display: flex; align-items: center; gap: 0.4rem; }
+    #private-file-list a { color: #1e3a5f; text-decoration: none; font-size: 0.9rem; flex: 1; }
+    #private-file-list a:hover { text-decoration: underline; }
+    .file-size { color: #aaa; font-size: 0.78rem; width: 60px; text-align: right; flex-shrink: 0; }
+    #private-file-list .play-btn, button.play-btn { font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 20px; border: none; background: #1e3a5f; color: white; cursor: pointer; margin-top: 0; transition: background 0.15s; }
+    #private-file-list .play-btn:hover, button.play-btn:hover { background: #16304f; }
+    #private-browser .mp3-controls button { font-size: 0.615rem; padding: 0.26rem 0.675rem; border-radius: 20px; border: 1.5px solid #1e3a5f; background: #1e3a5f; color: white; cursor: pointer; margin-top: 0; transition: background 0.15s; }
+    #private-browser .mp3-controls button:hover { background: #16304f; border-color: #16304f; }
+    #upload-area { border: 1.5px dashed #b0bec5 !important; border-radius: 8px !important; background: #f8fafc; }
+    #upload-area button { font-size: 0.615rem !important; padding: 0.26rem 0.675rem !important; margin-top: 0 !important; }
+    #upload-area button:disabled { opacity: 0.4; cursor: not-allowed; background: transparent !important; color: #1e3a5f !important; }
+    #upload-input { font-size: 0.615rem; border: 1.5px solid #1e3a5f; border-radius: 20px; padding: 0.26rem 0.675rem; cursor: pointer; background: transparent; color: #1e3a5f; }
+    #upload-input::file-selector-button { font-size: 0.615rem; padding: 0.2rem 0.5rem; border-radius: 20px; border: none; background: #1e3a5f; color: white; cursor: pointer; margin-right: 0.5rem; font-family: Arial, sans-serif; font-weight: 500; }
+    #upload-input::file-selector-button:hover { background: #16304f; }
+    #private-error { color: #e11d48; font-size: 0.85rem; margin-top: 0.3rem; }
+    .folder-item a { font-weight: 500; }
+    #private-browser button.toolbar-btn { font-size: 0.615rem; padding: 0.26rem 0.675rem; }
+    #private-browser .folder-action-btn { font-size: 0.55rem; padding: 0.2rem 0.55rem; border-radius: 20px; border: 2px solid #dc2626; background: transparent; color: #dc2626; cursor: pointer; margin-top: 0; margin-left: auto; transition: all 0.15s; white-space: nowrap; opacity: 0.6; }
+    .folder-item:hover .folder-action-btn { opacity: 1; }
+    #private-browser .folder-action-btn:hover { background: #dc2626; color: white; border-color: #dc2626; }
+    #private-browser .file-delete-btn { font-size: 0.615rem; padding: 0.26rem 0.675rem; border-radius: 20px; border: 2px solid #dc2626; background: transparent; color: #dc2626; cursor: pointer; margin-top: 0; margin-left: auto; white-space: nowrap; opacity: 0.5; transition: all 0.15s; }
+    .file-item:hover .file-delete-btn { opacity: 1; }
+    #private-browser .file-delete-btn:hover { background: #dc2626; color: white; border-color: #dc2626; }
+
+    .tab-bar { display: flex; align-items: flex-end; gap: 3px; margin-top: 0.75rem; margin-bottom: 0; border-bottom: 2px solid #1e3a5f; }
+    .tab-btn { margin-top: 0 !important; border-radius: 7px 7px 0 0 !important; border: 2px solid #1e3a5f !important; border-bottom: none !important; background: #c8d8e8 !important; color: #1e3a5f !important; font-size: 0.82rem; font-weight: 600; font-family: Arial, sans-serif; padding: 0.35rem 1.25rem 0.45rem !important; cursor: pointer; position: relative; bottom: -2px; transition: background 0.15s, color 0.15s, padding 0.1s; }
+    .tab-btn:hover { background: #4a7fa5 !important; color: white !important; }
+    .tab-btn.active { background: #1e3a5f !important; color: white !important; padding-top: 0.5rem !important; bottom: -2px; }
+    .tab-content-area { border-top: none; padding-top: 0.75rem; }
+
+    #audio-player { display: none; position: fixed; bottom: 0; left: 220px; right: 0; background: #1e3a5f; color: #fff; padding: 0.6rem 1rem; align-items: center; gap: 0.75rem; z-index: 999; flex-wrap: wrap; }
+    #audio-player button { background: transparent; border: 1.5px solid rgba(255,255,255,0.4); color: #fff; padding: 0.2rem 0.7rem; cursor: pointer; border-radius: 20px; font-size: 0.85rem; transition: all 0.15s; }
+    #audio-player button:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.7); }
+    #player-track { flex: 1; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 100px; }
+    #player-progress { flex: 2; min-width: 80px; cursor: pointer; }
+    #player-count { font-size: 0.75rem; color: rgba(255,255,255,0.6); }
+
+    @media (max-width: 600px) {
+      #sidenav { transform: translateX(-100%); }
+      #sidenav.open { transform: translateX(0); }
+      #hamburger { display: block; }
+      #nav-overlay.visible { display: block; }
+      #main-content { margin-left: 0; padding: 1rem; padding-top: 3.5rem; }
+      #audio-player { left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <button id="hamburger" onclick="toggleNav()">☰</button>
+  <div id="nav-overlay" onclick="toggleNav()"></div>
+
+  <nav id="sidenav">
+    <div class="nav-title">DLIV <span>Family &amp; Friends</span></div>
+    <div class="nav-section">
+      <div class="nav-section-label">Media</div>
+      <div class="nav-item active" onclick="showPanel('slideshows', this)"><span class="icon">🎞</span> Slideshows</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">College Funds</div>
+      <a class="nav-sub-item" href="https://digital.fidelity.com/prgw/digital/familygifting/mlgLandingPage?uuid=af6a9494832f4c9aaab448d3a7c55a25" target="_blank" rel="noopener noreferrer">Scouty</a>
+      <a class="nav-sub-item" href="https://digital.fidelity.com/prgw/digital/familygifting/mlgLandingPage?uuid=05fba5286cd04e8c85f55e363245f948" target="_blank" rel="noopener noreferrer">Slate</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Private</div>
+      <div class="nav-item" onclick="showPanel('friends', this)"><span class="icon">🔒</span> Dropbox</div>
+      <a class="nav-item" href="./calendar.html"><span class="icon">📅</span> Calendar</a>
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="nav-bottom">&copy; 2020 DLIV</div>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- Slideshows panel -->
+    <div id="panel-slideshows" class="panel active">
+      <div id="headerMessage"></div>
+      <div id="slideshow-container">
+        <div id="show-selector">
+          <label id="selectLabel" for="selectAlbum">Slideshows</label>
+          <select id="selectAlbum"></select>
+        </div>
+        <div id="slideshow"><img id="slide"></div>
+        <div id="controls">
+          <button id="prevBtn" title="Previous">⏮</button>
+          <button id="playPauseBtn" title="Pause">⏸</button>
+          <button id="nextBtn" title="Next">⏭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Friends / Dropbox panel -->
+    <div id="panel-friends" class="panel">
+      <div id="private-section">
+        <div id="private-panel">
+
+          <div id="private-login" style="display:none">
+            <h3>Sign In</h3>
+            <input type="email" id="private-email" placeholder="Email" />
+            <div style="position:relative;">
+              <input type="password" id="private-password" placeholder="Password" style="padding-right:2.5rem;" />
+              <span onclick="togglePwd('private-password',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:0.85rem;color:#94a3b8;user-select:none;">Show</span>
+            </div>
+            <button onclick="handleSignIn()">Sign In</button>
+            <p id="private-error"></p>
+          </div>
+
+          <div id="private-browser" style="display:none">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.15rem;">
+              <h3 style="margin:0">Dropbox</h3>
+              <button onclick="handleSignOut()">Sign Out</button>
+            </div>
+            <div id="private-breadcrumb"></div>
+            <div class="tab-bar">
+              <button class="tab-btn active" id="tab-btn-shared" onclick="switchTab('shared')">DLIV Users</button>
+              <button class="tab-btn" id="tab-btn-mine" onclick="switchTab('mine')">MyStuff</button>
+            </div>
+            <div class="tab-content-area">
+              <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin:0 0 0.5rem;">
+                <button class="toolbar-btn" onclick="toggleUpload()">+ File</button>
+                <button class="toolbar-btn" onclick="handleCreateFolder()">+ Folder</button>
+                <button class="toolbar-btn" onclick="toggleDownloadMode()" id="download-mode-btn">⬇ Download</button>
+                <button id="check-all-btn" onclick="checkAll()" style="display:none;">☑ Check All</button>
+                <button id="download-selected-btn" onclick="downloadSelected()" style="display:none;">⬇ Download Selected</button>
+              </div>
+              <div id="upload-area" style="display:none; margin:0.5rem 0; padding:0.75rem;">
+                <div id="drop-zone" style="border: 2px dashed #b0bec5; border-radius: 8px; padding: 1.5rem; text-align: center; background: #f8fafc; transition: all 0.2s; cursor: pointer;">
+                  <div style="font-size:1.5rem; margin-bottom:0.4rem;">📂</div>
+                  <div style="font-size:0.85rem; color:#666; margin-bottom:0.75rem;">Drag &amp; drop a file here, or</div>
+                  <div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; flex-wrap:wrap;">
+                    <input type="file" id="upload-input" multiple />
+                    <button onclick="handleUpload()">⬆ Upload</button>
+                  </div>
+                </div>
+                <span id="upload-status" style="font-size:0.85rem; display:block; margin-top:0.5rem;"></span>
+              </div>
+              <ul id="private-file-list"></ul>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="audio-player">
+    <button onclick="playerPrev()">⏮</button>
+    <button onclick="audio && (audio.paused ? audio.play() : audio.pause())">⏯</button>
+    <button onclick="playerNext()">⏭</button>
+    <span id="player-track">No track</span>
+    <input id="player-progress" type="range" min="0" max="100" value="0" oninput="playerSeek(this)" />
+    <span id="player-count"></span>
+    <button onclick="playerStop()">■ Stop</button>
+  </div>
+
+  <script type="module" src="./privateFiles.js"></script>
+  <script>
+    let privateInitialized = false;
+
+    function showPanel(name, el) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('panel-' + name).classList.add('active');
+      if (el) el.classList.add('active');
+      document.getElementById('sidenav').classList.remove('open');
+      document.getElementById('nav-overlay').classList.remove('visible');
+      if (name === 'friends' && !privateInitialized) {
+        privateInitialized = true;
+        window.initPrivate();
+      }
+    }
+
+    function toggleNav() {
+      document.getElementById('sidenav').classList.toggle('open');
+      document.getElementById('nav-overlay').classList.toggle('visible');
+    }
+
+    function togglePwd(id, el) {
+      const input = document.getElementById(id);
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      el.textContent = show ? 'Hide' : 'Show';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+version: 1
+frontend:
+  phases:
+    build:
+      commands:
+        - |
+          cat > frontend/dliv_outputs.json << EOF
+          {
+            "version": "1",
+            "aws_region": "${AWS_REGION}",
+            "auth": {
+              "user_pool_id":        "${USER_POOL_ID}",
+              "user_pool_client_id": "${USER_POOL_CLIENT_ID}"
+            },
+            "dropbox":   { "api_url": "${DROPBOX_API_URL}" },
+            "calendar":  { "api_url": "${CALENDAR_API_URL}" },
+            "slideshow": { "api_url": "${SLIDESHOW_API_URL}" }
+          }
+          EOF
+  artifacts:
+    baseDirectory: frontend
+    files:
+      - "**/*"
+  cache:
+    paths: []
+  customHeaders:
+    - pattern: '**/*.html'
+      headers:
+        - key: 'Cache-Control'
+          value: 'no-cache'
+    - pattern: '**/*.js'
+      headers:
+        - key: 'Cache-Control'
+          value: 'no-cache'
+    - pattern: 'dliv_outputs.json'
+      headers:
+        - key: 'Cache-Control'
+          value: 'no-cache'
