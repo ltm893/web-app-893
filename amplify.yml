@@ -3,20 +3,31 @@ frontend:
   phases:
     build:
       commands:
+        # Write dliv_outputs.json from branch env vars (process.env). Fails the build if Dropbox URL is missing.
         - |
-          cat > frontend/dliv_outputs.json << EOF
-          {
-            "version": "1",
-            "aws_region": "${APP_REGION}",
-            "auth": {
-              "user_pool_id":        "${USER_POOL_ID}",
-              "user_pool_client_id": "${USER_POOL_CLIENT_ID}"
-            },
-            "dropbox":   { "api_url": "${DROPBOX_API_URL}" },
-            "calendar":  { "api_url": "${CALENDAR_API_URL}" },
-            "slideshow": { "api_url": "${SLIDESHOW_API_URL}" }
+          node <<'NODE'
+          const fs = require("fs");
+          const dropbox = (process.env.DROPBOX_API_URL || "").trim();
+          const slide = (process.env.SLIDESHOW_API_URL || "").trim() || dropbox;
+          if (!dropbox.startsWith("http")) {
+            console.error("BUILD FAILED: DROPBOX_API_URL must be set to an absolute https URL on this Amplify branch.");
+            console.error("Got:", JSON.stringify(dropbox));
+            process.exit(1);
           }
-          EOF
+          const out = {
+            version: "1",
+            aws_region: process.env.APP_REGION || "",
+            auth: {
+              user_pool_id: process.env.USER_POOL_ID || "",
+              user_pool_client_id: process.env.USER_POOL_CLIENT_ID || "",
+            },
+            dropbox: { api_url: dropbox },
+            calendar: { api_url: (process.env.CALENDAR_API_URL || "").trim() },
+            slideshow: { api_url: slide },
+          };
+          fs.writeFileSync("frontend/dliv_outputs.json", JSON.stringify(out, null, 2));
+          console.log("Wrote frontend/dliv_outputs.json (dropbox api_url length:", dropbox.length + ")");
+          NODE
   artifacts:
     baseDirectory: frontend
     files:

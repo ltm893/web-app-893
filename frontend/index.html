@@ -211,6 +211,21 @@
   <script>
     let privateInitialized = false;
 
+    function navItemForPanel(panel) {
+      return [...document.querySelectorAll('#sidenav .nav-item')].find(
+        (n) => (n.getAttribute('onclick') || '').includes(`'${panel}'`)
+      );
+    }
+
+    function applyHashPanel() {
+      const raw = (location.hash || '').replace(/^#/, '');
+      if (raw === 'friends' || raw === 'dropbox') {
+        showPanel('friends', navItemForPanel('friends'));
+        return;
+      }
+      showPanel('slideshows', navItemForPanel('slideshows'));
+    }
+
     function showPanel(name, el) {
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -235,6 +250,9 @@
       input.type = show ? 'text' : 'password';
       el.textContent = show ? 'Hide' : 'Show';
     }
+
+    document.addEventListener('DOMContentLoaded', applyHashPanel);
+    window.addEventListener('hashchange', applyHashPanel);
   </script>
 </body>
 </html>
