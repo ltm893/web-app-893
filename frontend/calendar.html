@@ -31,12 +31,6 @@
     #nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 99; }
     #main-content { margin-left: 220px; flex: 1; padding: 1.5rem; }
 
-    #cal-login { max-width: 340px; }
-    #cal-login input { display: block; width: 100%; margin: 0.4rem 0; padding: 0.5rem 0.75rem; box-sizing: border-box; border: 1.5px solid #dde3ec; border-radius: 20px; font-size: 0.9rem; outline: none; transition: border-color 0.15s; }
-    #cal-login input:focus { border-color: #1e3a5f; }
-    #cal-login button { font-size: 0.9rem; padding: 0.45rem 1.1rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; margin-top: 0.4rem; border: 1.5px solid #1e3a5f; background: #1e3a5f; color: white; }
-    #cal-login-error { color: #e11d48; font-size: 0.85rem; margin-top: 0.3rem; }
-
     #cal-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
     #cal-month-title { font-size: 1.2rem; font-weight: 700; color: #1e3a5f; flex: 1; }
     #cal-header button { font-size: 0.82rem; padding: 0.35rem 0.9rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; border: 1.5px solid #1e3a5f; background: transparent; color: #1e3a5f; transition: all 0.15s; }
@@ -115,15 +109,17 @@
   </nav>
 
   <main id="main-content">
-    <div id="cal-login" style="display:none">
+    <div class="auth-sign-shell">
+    <div id="cal-login" class="auth-sign-card auth-sign-block" style="display:none">
       <h3>Sign In</h3>
-      <input type="email" id="cal-email" placeholder="Email" />
-      <div style="position:relative;">
-        <input type="password" id="cal-password" placeholder="Password" style="padding-right:2.5rem;" />
-        <span onclick="togglePwd('cal-password',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:0.85rem;color:#94a3b8;user-select:none;">Show</span>
+      <input type="email" id="cal-email" placeholder="Email" autocomplete="username" />
+      <div class="auth-password-row">
+        <input type="password" id="cal-password" placeholder="Password" autocomplete="current-password" />
+        <span class="auth-show-pwd" onclick="togglePwd('cal-password',this)">Show</span>
       </div>
-      <button onclick="handleCalSignIn()">Sign In</button>
-      <p id="cal-login-error"></p>
+      <button type="button" class="auth-signin-submit" onclick="handleCalSignIn()">Sign In</button>
+      <p id="cal-login-error" class="auth-sign-error"></p>
+    </div>
     </div>
 
     <div id="cal-content" style="display:none">

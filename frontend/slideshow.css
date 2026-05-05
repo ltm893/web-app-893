@@ -48,3 +48,90 @@ footer { display: none; }
 
 @media screen and (min-width: 670px)  { #slide { width: 660px; } }
 @media screen and (min-width: 1280px) { #slide { width: 1000px; } }
+
+/* ── Cognito sign-in: Dropbox (index) + Calendar — shared chrome ─────────── */
+
+.auth-sign-shell {
+  max-width: 800px;
+}
+
+.auth-sign-card {
+  margin-top: 1rem;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.auth-sign-block h3 {
+  margin: 0 0 1rem;
+  color: #1e3a5f;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.auth-sign-block input[type="email"],
+.auth-sign-block input[type="password"] {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin: 0.4rem 0;
+  padding: 0.5rem 0.75rem;
+  box-sizing: border-box;
+  border: 1.5px solid #dde3ec;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: Arial, sans-serif;
+}
+
+.auth-sign-block input:focus {
+  border-color: #1e3a5f;
+}
+
+.auth-sign-block .auth-password-row {
+  position: relative;
+  max-width: 420px;
+}
+
+.auth-sign-block .auth-password-row input {
+  padding-right: 2.5rem;
+}
+
+.auth-sign-block .auth-show-pwd {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  user-select: none;
+}
+
+.auth-sign-block button.auth-signin-submit {
+  font-size: 0.82rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  font-weight: 500;
+  margin-top: 0.75rem;
+  border: 1.5px solid #1e3a5f;
+  background: #1e3a5f;
+  color: #fff;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.auth-sign-block button.auth-signin-submit:hover {
+  background: #16304f;
+  border-color: #16304f;
+}
+
+.auth-sign-error {
+  color: #e11d48;
+  font-size: 0.85rem;
+  margin-top: 0.35rem;
+  min-height: 1.25em;
+}

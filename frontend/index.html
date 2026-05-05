@@ -39,12 +39,10 @@
     /* ── Private section ── */
     #private-section { max-width: 800px; font-family: Arial, sans-serif; }
     #private-panel { margin-top: 1rem; background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-    #private-login input { display: block; width: 100%; margin: 0.4rem 0; padding: 0.5rem 0.75rem; box-sizing: border-box; border: 1.5px solid #dde3ec; border-radius: 20px; font-size: 0.9rem; outline: none; transition: border-color 0.15s; }
-    #private-login input:focus { border-color: #1e3a5f; }
-    #private-login button, #private-browser button { font-size: 0.82rem; padding: 0.35rem 0.9rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; margin-top: 0.4rem; transition: all 0.15s; border: 1.5px solid #1e3a5f; background: transparent; color: #1e3a5f; }
-    #private-login button:hover, #private-browser button:hover { background: #1e3a5f; color: white; }
-    #private-browser #download-selected-btn, #private-login button[onclick="handleSignIn()"] { background: #1e3a5f; color: white; border-color: #1e3a5f; }
-    #private-browser #download-selected-btn:hover, #private-login button[onclick="handleSignIn()"]:hover { background: #16304f; border-color: #16304f; }
+    #private-browser button { font-size: 0.82rem; padding: 0.35rem 0.9rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; margin-top: 0.4rem; transition: all 0.15s; border: 1.5px solid #1e3a5f; background: transparent; color: #1e3a5f; }
+    #private-browser button:hover { background: #1e3a5f; color: white; }
+    #private-browser #download-selected-btn { background: #1e3a5f; color: white; border-color: #1e3a5f; }
+    #private-browser #download-selected-btn:hover { background: #16304f; border-color: #16304f; }
     #private-browser button[onclick="handleSignOut()"] { border-color: #ddd; color: #888; }
     #private-browser button[onclick="handleSignOut()"]:hover { border-color: #e11d48; color: #e11d48; background: transparent; }
     #private-breadcrumb { color: #bbb; font-size: 0.83rem; margin: 0.3rem 0 0; }
@@ -65,7 +63,6 @@
     #upload-input { font-size: 0.615rem; border: 1.5px solid #1e3a5f; border-radius: 20px; padding: 0.26rem 0.675rem; cursor: pointer; background: transparent; color: #1e3a5f; }
     #upload-input::file-selector-button { font-size: 0.615rem; padding: 0.2rem 0.5rem; border-radius: 20px; border: none; background: #1e3a5f; color: white; cursor: pointer; margin-right: 0.5rem; font-family: Arial, sans-serif; font-weight: 500; }
     #upload-input::file-selector-button:hover { background: #16304f; }
-    #private-error { color: #e11d48; font-size: 0.85rem; margin-top: 0.3rem; }
     .folder-item a { font-weight: 500; }
     #private-browser button.toolbar-btn { font-size: 0.615rem; padding: 0.26rem 0.675rem; }
     #private-browser .folder-action-btn { font-size: 0.55rem; padding: 0.2rem 0.55rem; border-radius: 20px; border: 2px solid #dc2626; background: transparent; color: #dc2626; cursor: pointer; margin-top: 0; margin-left: auto; transition: all 0.15s; white-space: nowrap; opacity: 0.6; }
@@ -147,15 +144,15 @@
       <div id="private-section">
         <div id="private-panel">
 
-          <div id="private-login" style="display:none">
+          <div id="private-login" class="auth-sign-block" style="display:none">
             <h3>Sign In</h3>
-            <input type="email" id="private-email" placeholder="Email" />
-            <div style="position:relative;">
-              <input type="password" id="private-password" placeholder="Password" style="padding-right:2.5rem;" />
-              <span onclick="togglePwd('private-password',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:0.85rem;color:#94a3b8;user-select:none;">Show</span>
+            <input type="email" id="private-email" placeholder="Email" autocomplete="username" />
+            <div class="auth-password-row">
+              <input type="password" id="private-password" placeholder="Password" autocomplete="current-password" />
+              <span class="auth-show-pwd" onclick="togglePwd('private-password',this)">Show</span>
             </div>
-            <button onclick="handleSignIn()">Sign In</button>
-            <p id="private-error"></p>
+            <button type="button" class="auth-signin-submit" onclick="handleSignIn()">Sign In</button>
+            <p id="private-error" class="auth-sign-error"></p>
           </div>
 
           <div id="private-browser" style="display:none">
