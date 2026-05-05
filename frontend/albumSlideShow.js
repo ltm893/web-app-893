@@ -44,16 +44,21 @@ function unwrapLambdaProxyEnvelope(parsed) {
       return parsed;
     }
   }
-  /* Rare: proxy-shaped body without statusCode — only use inner JSON if top-level has no albums[]. */
+  /* Rare: proxy-shaped body without statusCode — peel inner only if top-level has no albums[] / photos[]. */
   if (
     parsed &&
     typeof parsed === 'object' &&
     typeof parsed.body === 'string' &&
-    !Array.isArray(parsed.albums)
+    !Array.isArray(parsed.albums) &&
+    !Array.isArray(parsed.photos)
   ) {
     try {
       const inner = JSON.parse(parsed.body);
-      if (inner && typeof inner === 'object' && Array.isArray(inner.albums)) {
+      if (
+        inner &&
+        typeof inner === 'object' &&
+        (Array.isArray(inner.albums) || Array.isArray(inner.photos))
+      ) {
         return inner;
       }
     } catch {
@@ -117,7 +122,33 @@ let allPhotos = [];
 let currentIndex = 0;
 let isPlaying = false;
 let intervalId = null;
+let slideHasShownOnce = false;
+let slideLoadTicket = 0;
 const SLIDE_INTERVAL_MS = 3000;
+
+function resetSlideElement() {
+  const el = document.getElementById('slide');
+  if (!el) return;
+  slideHasShownOnce = false;
+  slideLoadTicket++;
+  el.hidden = true;
+  el.removeAttribute('src');
+  delete el.dataset.slideTicket;
+}
+
+function parsePhotosResponse(text) {
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error('Photos response was not JSON');
+  }
+  parsed = unwrapLambdaProxyEnvelope(parsed);
+  if (parsed && typeof parsed.error === 'string') {
+    throw new Error(parsed.error);
+  }
+  return parsePhotoUrls(parsed);
+}
 
 const photoAlbums = async () => {
   const url = `${ALBUMS_URL}${ALBUMS_URL.includes('?') ? '&' : '?'}_cb=${Date.now()}`;
@@ -155,6 +186,7 @@ const loadAlbumSelector = async (selector) => {
       headerMessage.innerText = '';
       names.unshift('Pick or Stop');
       const selectAlbum = document.getElementById(selector);
+      selectAlbum.innerHTML = '';
       for (const name of names) {
         const option = document.createElement('option');
         option.value = name;
@@ -180,11 +212,12 @@ const selectAlbumEventHandler = async (event) => {
   const albumName = event.target.value;
   if (albumName === 'Pick or Stop') {
     headerMessage.innerText = '';
-    document.getElementById('slide').src = '';
+    resetSlideElement();
     setControlsVisible(false);
     return;
   }
   headerMessage.innerText = `Getting pics in ${albumName}`;
+  resetSlideElement();
   try {
     const url = PHOTOS_URL_BASE + encodeURIComponent(albumName);
     const response = await fetch(url, {
@@ -195,10 +228,10 @@ const selectAlbumEventHandler = async (event) => {
     if (!response.ok) {
       throw new Error(`Photos request failed (${response.status})`);
     }
-    const urls = parsePhotoUrls(JSON.parse(await response.text()));
+    const urls = parsePhotosResponse(await response.text());
     if (!urls.length) {
       headerMessage.innerText = 'No photos in this album';
-      document.getElementById('slide').src = '';
+      resetSlideElement();
       setControlsVisible(false);
       return;
     }
@@ -238,7 +271,32 @@ const scheduleNextSlide = () => {
 };
 
 const showPhoto = (index) => {
-  document.getElementById('slide').src = allPhotos[index];
+  const el = document.getElementById('slide');
+  const url = allPhotos[index];
+  if (!el || !url) return;
+
+  const ticket = String(++slideLoadTicket);
+  el.dataset.slideTicket = ticket;
+
+  el.onerror = () => {
+    if (el.dataset.slideTicket !== ticket) return;
+    el.hidden = true;
+    el.removeAttribute('src');
+    const hm = document.getElementById('headerMessage');
+    if (hm) {
+      hm.innerText =
+        'Photo failed to load. Common causes: S3 bucket blocks public reads, or the image URL is wrong — check DevTools → Network on the failed image request.';
+    }
+  };
+
+  el.onload = () => {
+    if (el.dataset.slideTicket !== ticket) return;
+    el.hidden = false;
+    slideHasShownOnce = true;
+  };
+
+  if (!slideHasShownOnce) el.hidden = true;
+  el.src = url;
 };
 
 const stopSlideshow = () => {
@@ -267,6 +325,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (el) el.innerText = e.message || String(e);
   }
   setControlsVisible(false);
+  resetSlideElement();
 
   document.getElementById('playPauseBtn').addEventListener('click', () => {
     if (allPhotos.length === 0) return;

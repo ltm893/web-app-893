@@ -21,7 +21,27 @@ footer { display: none; }
 }
 #selectAlbum:focus { border-color: #16304f; box-shadow: 0 0 0 3px rgba(30,58,95,0.12); }
 
-#slide { width: 90%; display: block; }
+#slideshow {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: min(55vh, 720px);
+  margin: 0.5rem auto 0;
+}
+
+/* Native selects: some browsers need explicit option colors or menu looks empty */
+#selectAlbum option {
+  color: #1e3a5f;
+  background: #fff;
+}
+
+#slide {
+  width: 90%;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
 #controls { display: flex; justify-content: center; gap: 20px; padding: 12px 0; }
 #controls button { font-size: 28px; background: none; border: none; cursor: pointer; padding: 6px 12px; border-radius: 8px; transition: background-color 0.2s; line-height: 1; }
 #controls button:hover { background-color: rgba(0,0,0,0.1); }
