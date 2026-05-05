@@ -7,7 +7,7 @@ frontend:
           cat > frontend/dliv_outputs.json << EOF
           {
             "version": "1",
-            "aws_region": "${AWS_REGION}",
+            "aws_region": "${APP_REGION}",
             "auth": {
               "user_pool_id":        "${USER_POOL_ID}",
               "user_pool_client_id": "${USER_POOL_CLIENT_ID}"
