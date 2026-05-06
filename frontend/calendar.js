@@ -19,7 +19,7 @@ window.initCalendar = async function () {
 window.handleCalSignIn = async function () {
   const email    = document.getElementById("cal-email").value.trim();
   const password = document.getElementById("cal-password").value;
-  const errEl    = document.getElementById("cal-error");
+  const errEl    = document.getElementById("cal-login-error");
   errEl.textContent = "";
   try {
     await signIn(email, password);
