@@ -1,6 +1,6 @@
 # CONTEXT.md — web-app-893
-# Read this first at the start of every session.
-# Last updated: 2026-05-05
+# Maintainer notes. Setup is in README.md.
+# Last updated: 2026-10-06
 
 ## What this repo is
 Generic, cloneable web frontend add-on for cognito-s3-stack-893.
@@ -14,6 +14,7 @@ No pipeline-deploy. No CDK. No Amplify SDK.
 | `cognito-s3-stack-893` | ✅ | Base: Cognito + S3 — fork this first |
 | `dropbox-893` | ✅ | Private file manager |
 | `calendar-893` | ✅ | Calendar CRUD |
+| `pdf-search-893` | ✅ | OCR PDF search |
 | `music-player-893` | ✅ | iOS music player |
 | `web-app-893` | 🔜 Deploy | Web frontend — this repo |
 | `mileage-expense-tracker-893` | ✅ | MET iOS app |
@@ -22,7 +23,7 @@ No pipeline-deploy. No CDK. No Amplify SDK.
 
 ### For forkers
 1. Fork this repo and rename it to `your-domain-web` or similar
-2. Deploy `cognito-s3-stack-893`, `dropbox-893`, `calendar-893` first
+2. Deploy `cognito-s3-stack-893`, `dropbox-893`, `calendar-893`, `pdf-search-893` first
 3. Create a new Amplify Hosting app connected to your fork
 4. Set environment variables in Amplify console (see below)
 5. Deploy — `amplify.yml` generates `dliv_outputs.json` from env vars at build time
@@ -44,6 +45,7 @@ No real values ever committed to the repo.
 | `DROPBOX_API_URL` | dropbox-893 API URL | `https://xxx.execute-api...` |
 | `CALENDAR_API_URL` | calendar-893 API URL | `https://xxx.execute-api...` |
 | `SLIDESHOW_API_URL` | slideshow API URL (usually same as dropbox) | `https://xxx.execute-api...` |
+| `PDF_SEARCH_API_URL` | pdf-search-893 API URL | `https://xxx.execute-api...` |
 
 ## Architecture
 - NO pipeline-deploy — ever
@@ -77,7 +79,8 @@ No real values ever committed to the repo.
   },
   "dropbox":   { "api_url": "..." },
   "calendar":  { "api_url": "..." },
-  "slideshow": { "api_url": "..." }
+  "slideshow": { "api_url": "..." },
+  "pdfSearch": { "api_url": "..." }
 }
 ```
 
