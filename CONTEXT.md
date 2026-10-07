@@ -9,15 +9,7 @@ Served via Amplify Hosting (static files only).
 No pipeline-deploy. No CDK. No Amplify SDK.
 
 ## Repo family
-| Repo | Status | Description |
-|------|--------|-------------|
-| `cognito-s3-stack-893` | ✅ | Base: Cognito + S3 — fork this first |
-| `dropbox-893` | ✅ | Private file manager |
-| `calendar-893` | ✅ | Calendar CRUD |
-| `pdf-search-893` | ✅ | OCR PDF search |
-| `music-player-893` | ✅ | iOS music player |
-| `web-app-893` | 🔜 Deploy | Web frontend — this repo |
-| `mileage-expense-tracker-893` | ✅ | MET iOS app |
+Full map: [cognito-s3-stack-893](https://github.com/ltm893/cognito-s3-stack-893#repo-family). This repo is the website template. The live fork is `dliv-web`. Neighbors are in [README.md](README.md#repo-family).
 
 ## How to use this repo
 

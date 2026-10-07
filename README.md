@@ -11,18 +11,19 @@ No Amplify SDK. `auth.js` uses raw Cognito SRP. Tokens live in `sessionStorage` 
 - **Slideshows** — public albums from `dropbox-893` (`GET /albums`)
 - **Dropbox** — private files (Cognito JWT)
 - **Calendar** — CRUD via `calendar-893`
-- **PDF Search** — shown when `PDF_SEARCH_API_URL` is set (`pdf-search-893`)
+- **PDF Search** — shown when `PDF_SEARCH_API_URL` is set (`pdf-search-893`). Search, plus multipart S3 intake of PDFs into the docs bucket.
 
 ## Repo family
 
-| Repo | Role |
-|------|------|
-| `cognito-s3-stack-893` | Cognito + S3 (deploy first) |
-| `dropbox-893` | Private files + public albums |
-| `calendar-893` | Calendar API |
-| `pdf-search-893` | OCR PDF search (optional) |
-| `web-app-893` | This template |
-| `dliv-web` | Live dliv.com fork |
+Full map: [cognito-s3-stack-893](https://github.com/ltm893/cognito-s3-stack-893#repo-family).
+
+This repo is the website template. The live fork is `dliv-web`. Sign-in uses the Cognito user pool from `cognito-s3-stack-893`. The template calls these backends through Amplify environment variables:
+
+| Repo | Variable |
+|------|----------|
+| `dropbox-893` | `DROPBOX_API_URL` |
+| `calendar-893` | `CALENDAR_API_URL` |
+| `pdf-search-893` | `PDF_SEARCH_API_URL` (hidden when blank). OCR search and multipart S3 intake |
 
 ## Prerequisites
 
@@ -46,7 +47,7 @@ Set these on the Amplify **branch** (not in the repo):
 | `DROPBOX_API_URL` | yes | `dropbox-893` API URL (`https://…`) |
 | `CALENDAR_API_URL` | if using calendar | `calendar-893` API URL |
 | `SLIDESHOW_API_URL` | no | Defaults to `DROPBOX_API_URL` |
-| `PDF_SEARCH_API_URL` | if using PDF search | `pdf-search-893` API URL |
+| `PDF_SEARCH_API_URL` | if using PDF search | `pdf-search-893` API URL (search and multipart S3 intake) |
 
 The build fails if `DROPBOX_API_URL` is missing or not an `https://` URL.
 
