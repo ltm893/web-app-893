@@ -4,22 +4,18 @@ footer { display: none; }
 
 #show-selector { font-size: 16px; margin: 10px; padding: 10px; display: flex; align-items: center; gap: 0.75rem; }
 #selectLabel { color: #1e3a5f; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.02em; }
-#selectAlbum {
+#selectAlbum, #selectSharedAlbum {
   appearance: none; -webkit-appearance: none;
-  width: auto; min-width: 180px;
-  padding: 0.4rem 2.2rem 0.4rem 0.9rem;
-  border-radius: 20px; border: 1.5px solid #1e3a5f;
+  width: 100%; min-width: 0;
+  padding: 0.45rem 2.2rem 0.45rem 0.75rem;
+  border-radius: 8px; border: 1.5px solid #dde3ec;
   background-color: white;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231e3a5f' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 0.75rem center;
   font-family: Arial, sans-serif; font-size: 0.9rem;
   color: #1e3a5f; font-weight: 500; cursor: pointer; transition: all 0.15s; outline: none;
 }
-#selectAlbum:hover {
-  background-color: #1e3a5f; color: white;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='white' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-}
-#selectAlbum:focus { border-color: #16304f; box-shadow: 0 0 0 3px rgba(30,58,95,0.12); }
+#selectAlbum:focus, #selectSharedAlbum:focus { border-color: #1e3a5f; box-shadow: 0 0 0 3px rgba(30,58,95,0.12); }
 
 #slideshow {
   display: flex;
@@ -30,10 +26,30 @@ footer { display: none; }
 }
 
 /* Native selects: some browsers need explicit option colors or menu looks empty */
-#selectAlbum option {
+#selectAlbum option, #selectSharedAlbum option {
   color: #1e3a5f;
   background: #fff;
 }
+
+.slideshow-card-status { margin: 0.35rem 0 0; font-size: 0.78rem; color: #64748b; min-height: 1.1em; }
+#slideshow-picker-card { margin-top: 0; }
+.slideshow-picker-title { text-align: center; margin-bottom: 0.85rem; }
+.slideshow-picker-row {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+}
+.slideshow-picker-col { flex: 1 1 0; min-width: 0; }
+.slideshow-picker-label {
+  display: block; margin: 0 0 0.35rem; color: #1e3a5f;
+  font-size: 0.82rem; font-weight: 600;
+}
+#slideshow-picker-card .pdfsearch-select { margin-bottom: 0; }
+#slideCaption {
+  margin: 0.55rem auto 0; max-width: 90%; text-align: center;
+  color: #1e3a5f; font-size: 0.95rem; line-height: 1.4; min-height: 1.2em;
+  white-space: pre-wrap;
+}
+@media screen and (min-width: 670px)  { #slideCaption { max-width: 660px; } }
+@media screen and (min-width: 1280px) { #slideCaption { max-width: 1000px; } }
 
 #slide {
   width: 90%;
@@ -71,7 +87,8 @@ footer { display: none; }
 }
 
 .auth-sign-block input[type="email"],
-.auth-sign-block input[type="password"] {
+.auth-sign-block input[type="password"],
+.auth-sign-block input[type="text"] {
   display: block;
   width: 100%;
   max-width: 420px;
@@ -135,3 +152,44 @@ footer { display: none; }
   margin-top: 0.35rem;
   min-height: 1.25em;
 }
+
+.apple-progress, .private-loading { padding: 1.35rem 0.5rem 1.15rem; text-align: center; }
+.apple-progress-label, .private-loading p {
+  margin: 0 0 0.7rem; color: #64748b; font-size: 0.82rem; font-weight: 500; letter-spacing: 0.01em;
+}
+.apple-progress-track, .private-loading-track {
+  height: 3px; max-width: 168px; margin: 0 auto;
+  background: rgba(30, 58, 95, 0.14); border-radius: 99px; overflow: hidden;
+}
+.apple-progress-bar, .private-loading-bar {
+  height: 100%; width: 36%; background: #1e3a5f; border-radius: 99px;
+  animation: apple-progress-slide 1.05s ease-in-out infinite;
+}
+@keyframes apple-progress-slide {
+  0% { transform: translateX(-130%); }
+  100% { transform: translateX(340%); }
+}
+.apple-progress--on-dark .apple-progress-label { color: rgba(255,255,255,0.72); }
+.apple-progress--on-dark .apple-progress-track { background: rgba(255,255,255,0.16); }
+.apple-progress--on-dark .apple-progress-bar { background: #fff; }
+#headerMessage .apple-progress,
+.pdfsearch-status .apple-progress,
+#private-caption-save-status .apple-progress,
+.cal-loading .apple-progress {
+  padding: 0.2rem 0 0.05rem;
+  text-align: left;
+}
+.cal-loading .apple-progress { text-align: center; }
+.pdfsearch-status .apple-progress-label,
+#private-caption-save-status .apple-progress-label,
+#headerMessage .apple-progress-label,
+.cal-loading .apple-progress-label {
+  margin: 0 0 0.35rem;
+}
+.pdfsearch-status .apple-progress-track,
+#private-caption-save-status .apple-progress-track,
+#headerMessage .apple-progress-track {
+  margin-left: 0;
+  max-width: 140px;
+}
+#private-file-list .file-loading { list-style: none; border: none !important; display: block; padding: 1.1rem 0; }

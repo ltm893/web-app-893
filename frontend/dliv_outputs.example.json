@@ -5,7 +5,16 @@
     "user_pool_id":        "us-east-1_XXXXXXXXX",
     "user_pool_client_id": "xxxxxxxxxxxxxxxxxxxxxxxxxx"
   },
-  "dropbox":   { "api_url": "https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/prod/" },
-  "calendar":  { "api_url": "https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/prod/" },
-  "slideshow": { "api_url": "https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/prod/" }
+  "dropbox":    { "api_url": "https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/prod/" },
+  "calendar":   { "api_url": "https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/prod/" },
+  "slideshow":  { "api_url": "https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/prod/" },
+  "pdfSearch":  { "api_url": "https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/prod/" },
+  "videoConvert": { "api_url": "https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/prod/" },
+  "site": {
+    "title": "",
+    "tagline": "",
+    "footer": "",
+    "pdfSearchLabel": "",
+    "links": []
+  }
 }

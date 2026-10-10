@@ -47,9 +47,15 @@ Set these on the Amplify **branch** (not in the repo):
 | `DROPBOX_API_URL` | yes | `dropbox-893` API URL (`https://…`) |
 | `CALENDAR_API_URL` | if using calendar | `calendar-893` API URL |
 | `SLIDESHOW_API_URL` | no | Defaults to `DROPBOX_API_URL` |
-| `PDF_SEARCH_API_URL` | if using PDF search | `pdf-search-893` API URL (search and multipart S3 intake) |
+| `PDF_SEARCH_API_URL` | if using PDF search | `pdf-search-893` API URL (search and multipart S3 intake). The nav says **PDF Search** unless `SITE_PDF_SEARCH_LABEL` is set. |
+| `VIDEO_CONVERT_API_URL` | no | `video-convert-893` API URL. Blank hides the video tools. |
+| `SITE_PDF_SEARCH_LABEL` | no | Renames the PDF search nav item. Blank keeps **PDF Search**. |
+| `SITE_TITLE` | no | Nav title. Blank keeps the title in the HTML. |
+| `SITE_TAGLINE` | no | Line under the nav title. |
+| `SITE_FOOTER` | no | Line at the bottom of the nav. |
+| `SITE_LINKS` | no | JSON array of `{label, href}`. Blank hides the extra links. `href` must be `http:` or `https:`. |
 
-The build fails if `DROPBOX_API_URL` is missing or not an `https://` URL.
+The build fails if `DROPBOX_API_URL` is missing or not an `https://` URL, or if `SITE_LINKS` is set and is not that JSON array.
 
 ## Local
 

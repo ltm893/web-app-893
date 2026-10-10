@@ -2,11 +2,23 @@
 
 let ALBUMS_URL = '';
 let PHOTOS_URL_BASE = '';
+let SHARED_ALBUMS_URL = '';
 
 function normalizeApiBase(url) {
   if (!url || typeof url !== 'string') return '';
   const t = url.trim();
   return t.endsWith('/') ? t : `${t}/`;
+}
+
+function loadingHtml(label) {
+  const text = String(label || "Loading")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return `<div class="apple-progress" role="status" aria-live="polite">
+    <p class="apple-progress-label">${text}</p>
+    <div class="apple-progress-track"><div class="apple-progress-bar"></div></div>
+  </div>`;
 }
 
 async function loadConfig() {
@@ -27,6 +39,7 @@ async function loadConfig() {
   }
   ALBUMS_URL = `${base}albums`;
   PHOTOS_URL_BASE = `${base}albums/`;
+  SHARED_ALBUMS_URL = `${base}shared-albums`;
 }
 
 /** Unwrap only API Gateway Lambda-proxy JSON (`statusCode` + string `body`). Avoid replacing `{ albums }` when an unrelated string `body` exists alongside valid albums. */
@@ -103,19 +116,21 @@ function parseAlbumNames(json) {
   return [];
 }
 
-/** Supports `{ photos: [{ url }, ...] }` and legacy string[]. */
-function parsePhotoUrls(json) {
-  if (Array.isArray(json)) {
-    return json
-      .map((x) => (typeof x === 'string' ? x : x?.url))
-      .filter(Boolean);
-  }
-  if (json && Array.isArray(json.photos)) {
-    return json.photos
-      .map((p) => (typeof p === 'string' ? p : p?.url))
-      .filter(Boolean);
-  }
-  return [];
+/** Supports `{ photos: [{ url, caption }, ...] }` and legacy string[]. */
+function parsePhotos(json) {
+  const rows = Array.isArray(json) ? json : json && Array.isArray(json.photos) ? json.photos : [];
+  return rows
+    .map((p) => {
+      if (typeof p === 'string') return { url: p, caption: '', filename: '' };
+      const url = p?.url || '';
+      if (!url) return null;
+      return {
+        url,
+        caption: typeof p.caption === 'string' ? p.caption.trim() : '',
+        filename: typeof p.filename === 'string' ? p.filename : '',
+      };
+    })
+    .filter(Boolean);
 }
 
 let allPhotos = [];
@@ -134,6 +149,7 @@ function resetSlideElement() {
   el.hidden = true;
   el.removeAttribute('src');
   delete el.dataset.slideTicket;
+  setCaption('');
 }
 
 function parsePhotosResponse(text) {
@@ -147,7 +163,7 @@ function parsePhotosResponse(text) {
   if (parsed && typeof parsed.error === 'string') {
     throw new Error(parsed.error);
   }
-  return parsePhotoUrls(parsed);
+  return parsePhotos(parsed);
 }
 
 const photoAlbums = async () => {
@@ -172,8 +188,8 @@ const photoAlbums = async () => {
 };
 
 const loadAlbumSelector = async (selector) => {
-  const headerMessage = document.getElementById('headerMessage');
-  headerMessage.innerText = 'Getting Albums';
+  const status = document.getElementById('familyAlbumStatus');
+  if (status) status.innerHTML = loadingHtml("Getting albums");
   try {
     const raw = await photoAlbums();
     if (raw && typeof raw.error === "string") {
@@ -182,11 +198,15 @@ const loadAlbumSelector = async (selector) => {
     let payload = unwrapLambdaProxyEnvelope(raw);
 
     const names = parseAlbumNames(payload);
+    const selectAlbum = document.getElementById(selector);
+    if (!selectAlbum) return;
+    selectAlbum.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Pick or Stop';
+    selectAlbum.appendChild(placeholder);
     if (names.length) {
-      headerMessage.innerText = '';
-      names.unshift('Pick or Stop');
-      const selectAlbum = document.getElementById(selector);
-      selectAlbum.innerHTML = '';
+      if (status) status.textContent = '';
       for (const name of names) {
         const option = document.createElement('option');
         option.value = name;
@@ -196,13 +216,17 @@ const loadAlbumSelector = async (selector) => {
       selectAlbum.addEventListener('change', selectAlbumEventHandler, true);
     } else {
       console.warn('Slideshow /albums payload (empty album list):', payload);
-      headerMessage.innerText =
-        'No albums returned — check DevTools → Network → albums response matches curl (same URL).';
+      if (status) {
+        status.innerText =
+          'No family albums returned.';
+      }
     }
   } catch (e) {
     console.error(e);
-    headerMessage.innerText =
-      e.message || 'Could not load albums — check slideshow API URL';
+    if (status) {
+      status.innerText =
+        e.message || 'Could not load albums — check slideshow API URL';
+    }
   }
 };
 
@@ -210,14 +234,17 @@ const selectAlbumEventHandler = async (event) => {
   const headerMessage = document.getElementById('headerMessage');
   stopSlideshow();
   const albumName = event.target.value;
-  if (albumName === 'Pick or Stop') {
+  resetSharedSelect();
+  if (!albumName) {
     headerMessage.innerText = '';
     resetSlideElement();
+    setCaption('');
     setControlsVisible(false);
     return;
   }
-  headerMessage.innerText = `Getting pics in ${albumName}`;
+  headerMessage.innerHTML = loadingHtml(`Getting pics in ${albumName}`);
   resetSlideElement();
+  setCaption('');
   try {
     const url = PHOTOS_URL_BASE + encodeURIComponent(albumName);
     const response = await fetch(url, {
@@ -228,14 +255,14 @@ const selectAlbumEventHandler = async (event) => {
     if (!response.ok) {
       throw new Error(`Photos request failed (${response.status})`);
     }
-    const urls = parsePhotosResponse(await response.text());
-    if (!urls.length) {
+    const slides = parsePhotosResponse(await response.text());
+    if (!slides.length) {
       headerMessage.innerText = 'No photos in this album';
       resetSlideElement();
       setControlsVisible(false);
       return;
     }
-    startSlideshow(urls);
+    startSlideshow(slides);
   } catch (e) {
     console.error(e);
     headerMessage.innerText =
@@ -244,8 +271,123 @@ const selectAlbumEventHandler = async (event) => {
   }
 };
 
-const startSlideshow = (photoUrls) => {
-  allPhotos = photoUrls;
+const loadSharedAlbumSelector = async () => {
+  const status = document.getElementById('sharedAlbumStatus');
+  const select = document.getElementById('selectSharedAlbum');
+  if (!select) return;
+  setUsersPickerVisible(false);
+  if (status) status.textContent = '';
+  select.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Pick or Stop';
+  select.appendChild(placeholder);
+  try {
+    const url = `${SHARED_ALBUMS_URL}${SHARED_ALBUMS_URL.includes('?') ? '&' : '?'}_cb=${Date.now()}`;
+    const response = await fetch(url, {
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      if (response.status === 403 || response.status === 404) {
+        setUsersPickerVisible(false);
+        return;
+      }
+      throw new Error(`Shared slideshows request failed (${response.status})`);
+    }
+    const raw = unwrapLambdaProxyEnvelope(JSON.parse(await response.text()));
+    if (raw && typeof raw.error === 'string') throw new Error(raw.error);
+    const albums = Array.isArray(raw?.albums) ? raw.albums : [];
+    if (!albums.length) {
+      setUsersPickerVisible(false);
+      return;
+    }
+    setUsersPickerVisible(true);
+    if (status) status.textContent = '';
+    for (const album of albums) {
+      if (!album?.id) continue;
+      const option = document.createElement('option');
+      option.value = album.id;
+      const who = album.ownerLabel ? ` · ${album.ownerLabel}` : '';
+      option.textContent = `${album.title || 'Slideshow'}${who}`;
+      select.appendChild(option);
+    }
+    select.addEventListener('change', selectSharedAlbumEventHandler, true);
+  } catch (e) {
+    console.error(e);
+    setUsersPickerVisible(true);
+    if (status) {
+      status.innerText = e.message || 'Could not load shared slideshows';
+    }
+  }
+};
+
+const selectSharedAlbumEventHandler = async (event) => {
+  const headerMessage = document.getElementById('headerMessage');
+  stopSlideshow();
+  const id = event.target.value;
+  resetFamilySelect();
+  if (!id) {
+    headerMessage.innerText = '';
+    resetSlideElement();
+    setCaption('');
+    setControlsVisible(false);
+    return;
+  }
+  headerMessage.innerHTML = loadingHtml('Getting shared pics');
+  resetSlideElement();
+  setCaption('');
+  try {
+    const [owner, ...slugParts] = id.split('/');
+    const slug = slugParts.join('/');
+    const url = `${SHARED_ALBUMS_URL}/${encodeURIComponent(owner)}/${encodeURIComponent(slug)}`;
+    const response = await fetch(url, {
+      mode: 'cors',
+      credentials: 'omit',
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      throw new Error(`Shared photos request failed (${response.status})`);
+    }
+    const slides = parsePhotosResponse(await response.text());
+    if (!slides.length) {
+      headerMessage.innerText = 'No photos in this slideshow';
+      resetSlideElement();
+      setControlsVisible(false);
+      return;
+    }
+    startSlideshow(slides);
+  } catch (e) {
+    console.error(e);
+    headerMessage.innerText =
+      e.message || 'Could not load this shared slideshow';
+    setControlsVisible(false);
+  }
+};
+
+function resetFamilySelect() {
+  const select = document.getElementById('selectAlbum');
+  if (select && select.value) select.value = '';
+}
+
+function resetSharedSelect() {
+  const select = document.getElementById('selectSharedAlbum');
+  if (select && select.value) select.value = '';
+}
+
+function setUsersPickerVisible(visible) {
+  const col = document.getElementById('slideshow-picker-users');
+  if (col) col.hidden = !visible;
+}
+
+function setCaption(text) {
+  const el = document.getElementById('slideCaption');
+  if (el) el.textContent = text || '';
+}
+
+const startSlideshow = (slides) => {
+  allPhotos = slides;
   currentIndex = 0;
   isPlaying = true;
   showPhoto(currentIndex);
@@ -272,8 +414,11 @@ const scheduleNextSlide = () => {
 
 const showPhoto = (index) => {
   const el = document.getElementById('slide');
-  const url = allPhotos[index];
+  const slide = allPhotos[index];
+  const url = typeof slide === 'string' ? slide : slide?.url;
   if (!el || !url) return;
+  const caption = typeof slide === 'string' ? '' : (slide.caption || '');
+  setCaption(caption);
 
   const ticket = String(++slideLoadTicket);
   el.dataset.slideTicket = ticket;
@@ -296,6 +441,7 @@ const showPhoto = (index) => {
   };
 
   if (!slideHasShownOnce) el.hidden = true;
+  el.alt = caption || (typeof slide === 'object' ? slide.filename : '') || '';
   el.src = url;
 };
 
@@ -319,6 +465,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   try {
     await loadConfig();
     await loadAlbumSelector('selectAlbum');
+    await loadSharedAlbumSelector();
   } catch (e) {
     console.error(e);
     const el = document.getElementById('headerMessage');

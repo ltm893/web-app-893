@@ -38,11 +38,12 @@ No real values ever committed to the repo.
 | `CALENDAR_API_URL` | calendar-893 API URL | `https://xxx.execute-api...` |
 | `SLIDESHOW_API_URL` | slideshow API URL (usually same as dropbox) | `https://xxx.execute-api...` |
 | `PDF_SEARCH_API_URL` | pdf-search-893 API URL | `https://xxx.execute-api...` |
+| `SITE_LINKS` | Optional JSON array of `{label, href}` nav links. Blank hides them. | `[]` |
 
 ## Architecture
 - NO pipeline-deploy — ever
 - NO Amplify SDK — auth.js uses raw Cognito SRP (USER_PASSWORD_AUTH)
-- Tokens stored in sessionStorage — cleared on tab close
+- Tokens stored in localStorage — they survive a browser restart
 - Config read from dliv_outputs.json at runtime (fetch on page load)
 - dliv_outputs.json generated at build time from env vars — never committed
 
@@ -72,7 +73,14 @@ No real values ever committed to the repo.
   "dropbox":   { "api_url": "..." },
   "calendar":  { "api_url": "..." },
   "slideshow": { "api_url": "..." },
-  "pdfSearch": { "api_url": "..." }
+  "pdfSearch": { "api_url": "..." },
+  "site": {
+    "title": "",
+    "tagline": "",
+    "footer": "",
+    "pdfSearchLabel": "",
+    "links": [{ "label": "...", "href": "https://..." }]
+  }
 }
 ```
 

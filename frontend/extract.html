@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Extract</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f4f6f8; color: #1e3a5f; }
+    header {
+      display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+      padding: 0.75rem 1rem; background: #1e3a5f; color: #fff;
+    }
+    header p { margin: 0; font-size: 0.85rem; }
+    header button, #extract-signin button {
+      background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,0.5);
+      border-radius: 20px; padding: 0.3rem 0.9rem; cursor: pointer; font: inherit;
+    }
+    header div { display: flex; gap: 0.4rem; }
+    #extract-status, #extract-signin { max-width: 900px; margin: 0 auto; padding: 0.75rem 1rem 0; }
+    #extract-signin p { margin: 0 0 0.5rem; }
+    #extract-signin input {
+      display: block; width: 100%; max-width: 22rem; box-sizing: border-box;
+      margin: 0 0 0.5rem; padding: 0.45rem 0.7rem; border: 1.5px solid #dde3ec; border-radius: 8px;
+      font: inherit;
+    }
+    #extract-signin button { background: #1e3a5f; color: #fff; border-color: #1e3a5f; }
+    main { max-width: 900px; margin: 0 auto; padding: 1rem; }
+    main p { margin: 0; }
+    img { display: block; width: 100%; height: auto; background: #fff; margin: 0 0 1rem; }
+    @media print {
+      header, #extract-status, #extract-signin { display: none; }
+      body { background: #fff; }
+      main { max-width: none; padding: 0; }
+      img { margin: 0; page-break-after: always; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <p>Anyone with this link can open these pages for 7 days. Removing them requires a sign-in.</p>
+    <div>
+      <button type="button" id="print">Print</button>
+      <button type="button" id="remove">Remove</button>
+    </div>
+  </header>
+  <p id="extract-status"></p>
+  <form id="extract-signin" hidden>
+    <p>Sign in to remove this extract.</p>
+    <input id="extract-email" type="email" autocomplete="username" required placeholder="Email" />
+    <input id="extract-password" type="password" autocomplete="current-password" required placeholder="Password" />
+    <button type="submit">Sign in</button>
+  </form>
+  <main id="pages"></main>
+  <script type="module">
+    import { extractPrintItems, extractRemovePlan } from "./extractPages.js";
+    import { authFetch, ensureSignedIn, getPdfSearchApiUrl, signIn } from "./auth.js";
+    import { pdfSearchDisplayLabel } from "./siteNav.js";
+
+    const items = extractPrintItems(location.hash);
+    const main = document.getElementById("pages");
+    const status = document.getElementById("extract-status");
+    const form = document.getElementById("extract-signin");
+    const removeBtn = document.getElementById("remove");
+
+    if (!items.length) {
+      main.textContent = "This extract link has nothing to print.";
+      removeBtn.disabled = true;
+    } else {
+      for (const item of items) {
+        const img = document.createElement("img");
+        img.src = item.url;
+        img.alt = "Extracted page";
+        main.appendChild(img);
+      }
+    }
+
+    document.getElementById("print").addEventListener("click", () => window.print());
+
+    async function deleteExtracts() {
+      const unsigned = extractRemovePlan(items, false);
+      if (unsigned.action === "list") {
+        const cfg = await fetch("/dliv_outputs.json").then((r) => r.json()).catch(() => ({}));
+        status.textContent = `This link cannot remove the extract. Use Show all extracts in ${pdfSearchDisplayLabel(cfg)}.`;
+        return;
+      }
+      if (!(await ensureSignedIn())) {
+        form.hidden = false;
+        return;
+      }
+      const plan = extractRemovePlan(items, true);
+      const apiUrl = await getPdfSearchApiUrl();
+      if (!apiUrl) {
+        status.textContent = "PDF search is not configured on this site.";
+        return;
+      }
+      removeBtn.disabled = true;
+      for (const key of plan.keys) {
+        const res = await authFetch(`${apiUrl}extracts?key=${encodeURIComponent(key)}`, { method: "DELETE" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      main.replaceChildren();
+      form.hidden = true;
+      status.textContent = "Removed.";
+    }
+
+    removeBtn.addEventListener("click", () => {
+      if (!window.confirm("Remove this extract? The print link will stop working.")) return;
+      deleteExtracts().catch((err) => {
+        removeBtn.disabled = false;
+        status.textContent = err.message || "Could not remove extract";
+      });
+    });
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("extract-email").value;
+      const password = document.getElementById("extract-password").value;
+      signIn(email, password).then(() => deleteExtracts()).catch((err) => {
+        status.textContent = err.message || "Could not sign in";
+      });
+    });
+  </script>
+</body>
+</html>

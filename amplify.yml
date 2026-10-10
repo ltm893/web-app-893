@@ -14,6 +14,39 @@ frontend:
             console.error("Got:", JSON.stringify(dropbox));
             process.exit(1);
           }
+          function siteLinks(raw) {
+            const text = (raw || "").trim();
+            if (!text) return [];
+            let parsed;
+            try {
+              parsed = JSON.parse(text);
+            } catch (err) {
+              console.error("BUILD FAILED: SITE_LINKS must be a JSON array of {label, href}.");
+              console.error(err.message);
+              process.exit(1);
+            }
+            if (!Array.isArray(parsed)) {
+              console.error("BUILD FAILED: SITE_LINKS must be a JSON array.");
+              process.exit(1);
+            }
+            return parsed.map((item, i) => {
+              const label = String(item && item.label || "").trim();
+              const href = String(item && item.href || "").trim();
+              let ok = false;
+              try {
+                const url = new URL(href);
+                ok = url.protocol === "http:" || url.protocol === "https:";
+              } catch (err) {
+                ok = false;
+              }
+              if (!label || !ok) {
+                console.error("BUILD FAILED: SITE_LINKS[" + i + "] needs a label and an http(s) href.");
+                console.error("Got:", JSON.stringify(item));
+                process.exit(1);
+              }
+              return { label, href };
+            });
+          }
           const out = {
             version: "1",
             aws_region: process.env.APP_REGION || "",
@@ -24,6 +57,15 @@ frontend:
             dropbox: { api_url: dropbox },
             calendar: { api_url: (process.env.CALENDAR_API_URL || "").trim() },
             slideshow: { api_url: slide },
+            pdfSearch: { api_url: (process.env.PDF_SEARCH_API_URL || "").trim() },
+            videoConvert: { api_url: (process.env.VIDEO_CONVERT_API_URL || "").trim() },
+            site: {
+              title: (process.env.SITE_TITLE || "").trim(),
+              tagline: (process.env.SITE_TAGLINE || "").trim(),
+              footer: (process.env.SITE_FOOTER || "").trim(),
+              pdfSearchLabel: (process.env.SITE_PDF_SEARCH_LABEL || "").trim(),
+              links: siteLinks(process.env.SITE_LINKS),
+            },
           };
           fs.writeFileSync("frontend/dliv_outputs.json", JSON.stringify(out, null, 2));
           console.log("Wrote frontend/dliv_outputs.json (dropbox api_url length:", dropbox.length + ")");

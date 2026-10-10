@@ -17,17 +17,19 @@
     }
     .nav-title { color: white; font-size: 1.4rem; font-weight: 700; letter-spacing: 0.08em; padding: 0 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .nav-title span { color: rgba(255,255,255,0.4); font-size: 0.7rem; font-weight: 400; display: block; margin-top: 0.1rem; }
-    .nav-section { margin-top: 1.4rem; }
-    .nav-section-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.80); padding: 0 0 0.4rem 1.25rem; margin: 0 1.25rem 0.35rem 0; border-bottom: 1px solid rgba(255,255,255,0.18); }
+    .nav-section { margin-top: 0.75rem; }
     .nav-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 1.25rem; color: rgba(255,255,255,0.75); text-decoration: none; font-size: 0.9rem; cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent; }
+    .nav-item[hidden] { display: none !important; }
     .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
     .nav-item.active { background: rgba(255,255,255,0.12); color: white; border-left-color: white; font-weight: 600; }
     .nav-item .icon { font-size: 1rem; width: 1.2rem; text-align: center; }
-    .nav-sub-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1.25rem 0.4rem 2.9rem; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.83rem; cursor: pointer; transition: all 0.15s; }
-    .nav-sub-item:hover { color: white; background: rgba(255,255,255,0.06); }
-    .nav-sub-item::before { content: "↗"; font-size: 0.7rem; opacity: 0.5; margin-right: 0.2rem; }
+    .nav-out { padding: 0.35rem 0 0.15rem; border-top: 1px solid rgba(255,255,255,0.1); }
+    #nav-out[hidden] { display: none !important; }
+    .nav-sub-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.32rem 1.25rem; color: rgba(255,255,255,0.42); text-decoration: none; font-size: 0.8rem; cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent; }
+    .nav-sub-item:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.06); }
+    .nav-sub-item::before { content: "↗"; font-size: 0.7rem; opacity: 0.55; }
     .nav-spacer { flex: 1; }
-    .nav-bottom { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem; color: rgba(255,255,255,0.3); }
+    .nav-bottom { padding: 0.35rem 1.25rem 1rem; font-size: 0.75rem; color: rgba(255,255,255,0.3); }
 
     #hamburger { display: none; position: fixed; top: 0.75rem; left: 0.75rem; z-index: 200; background: #1e3a5f; color: white; border: none; border-radius: 8px; padding: 0.4rem 0.7rem; font-size: 1.2rem; cursor: pointer; }
     #nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 99; }
@@ -39,6 +41,14 @@
     /* ── Private section ── */
     #private-section { max-width: 800px; font-family: Arial, sans-serif; }
     #private-panel { margin-top: 1rem; background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    #private-browser { position: relative; }
+    #private-op-progress {
+      position: absolute; inset: 0; z-index: 80;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,0.82);
+    }
+    #private-op-progress[hidden] { display: none !important; }
+    #private-op-progress .apple-progress { padding: 1rem 1.25rem; min-width: 12rem; }
     #private-browser button { font-size: 0.82rem; padding: 0.35rem 0.9rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; margin-top: 0.4rem; transition: all 0.15s; border: 1.5px solid #1e3a5f; background: transparent; color: #1e3a5f; }
     #private-browser button:hover { background: #1e3a5f; color: white; }
     #private-browser #download-selected-btn { background: #1e3a5f; color: white; border-color: #1e3a5f; }
@@ -48,15 +58,68 @@
     #private-breadcrumb { color: #bbb; font-size: 0.83rem; margin: 0.3rem 0 0; }
     #private-breadcrumb a { color: #1e3a5f; text-decoration: none; font-size: 0.83rem; font-weight: 500; }
     #private-breadcrumb a:hover { text-decoration: underline; }
+    #private-slideshows-manage { display: none; padding-top: 0.75rem; }
+    #private-slideshows-manage.is-open { display: block; }
+    #private-slideshows-status { margin: 0 0 0.45rem; font-size: 0.82rem; color: #64748b; }
+    #private-slideshows-list { list-style: none; padding: 0; margin: 0; }
+    #private-slideshows-list > li { padding: 0.55rem 0; border-bottom: 1px solid #f0f4f8; }
+    .private-slideshow-album-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    #private-browser .private-slideshow-album-toggle {
+      flex: 1; min-width: 0; margin: 0 !important; padding: 0 !important;
+      border: none !important; background: transparent !important; color: #1e3a5f !important;
+      text-align: left; font-size: 0.9rem !important; font-weight: 500;
+    }
+    #private-browser .private-slideshow-album-toggle:hover {
+      background: transparent !important; color: #1e3a5f !important; text-decoration: underline;
+    }
+    .private-slideshow-album-meta { color: #94a3b8; font-size: 0.78rem; font-weight: 400; }
+    .private-slideshow-photos { list-style: none; padding: 0.35rem 0 0; margin: 0; }
+    .private-slideshow-photos li {
+      display: flex; align-items: center; gap: 0.55rem; padding: 0.4rem 0;
+      border-top: 1px solid #f8fafc;
+    }
+    .private-slideshow-photos img {
+      width: 44px; height: 44px; object-fit: cover; border-radius: 6px; background: #e8eef4; flex-shrink: 0;
+    }
+    .private-slideshow-photo-copy { flex: 1; min-width: 0; }
+    .private-slideshow-photo-copy strong {
+      display: block; font-size: 0.82rem; color: #1e3a5f; font-weight: 500;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .private-slideshow-photo-copy span {
+      display: block; font-size: 0.75rem; color: #64748b; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap;
+    }
     #private-file-list { list-style: none; padding: 0; margin-top: 0.5rem; }
-    #private-file-list li { padding: 0.4rem 0; border-bottom: 1px solid #f0f4f8; display: flex; align-items: center; gap: 0.4rem; }
-    #private-file-list a { color: #1e3a5f; text-decoration: none; font-size: 0.9rem; flex: 1; }
+    #private-file-list li { padding: 0.4rem 0; border-bottom: 1px solid #f0f4f8; display: flex; align-items: center; gap: 0.4rem; flex-wrap: nowrap; }
+    #private-file-list li.file-item,
+    #private-file-list li.folder-item { position: relative; margin: 0 -0.4rem; padding-left: 0.4rem; padding-right: 0.4rem; border-radius: 6px; transition: background 0.12s; }
+    #private-file-list li.file-item:hover,
+    #private-file-list li.file-item:focus-within,
+    #private-file-list li.folder-item:hover,
+    #private-file-list li.folder-item:focus-within { background: #f4f7fb; z-index: 2; }
+    #private-file-list a { color: #1e3a5f; text-decoration: none; font-size: 0.9rem; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #private-file-list li.file-item > a::after,
+    #private-file-list li.folder-item > a::after { content: ""; position: absolute; inset: 0; }
+    #private-file-list li.file-item:hover > a,
+    #private-file-list li.folder-item:hover > a,
     #private-file-list a:hover { text-decoration: underline; }
-    .file-size { color: #aaa; font-size: 0.78rem; width: 60px; text-align: right; flex-shrink: 0; }
+    #private-file-list li.file-item input,
+    #private-file-list li.file-item .play-btn,
+    #private-file-list li.file-item .file-menu,
+    #private-file-list li.file-item .folder-action-btn,
+    #private-file-list li.folder-item .file-menu,
+    #private-file-list li.folder-item .folder-actions { position: relative; z-index: 1; }
+    .file-item-meta { display: flex; align-items: center; gap: 0.65rem; flex-shrink: 0; margin-left: auto; }
+    .file-size, .file-length { color: #aaa; font-size: 0.78rem; text-align: right; flex-shrink: 0; white-space: nowrap; font-variant-numeric: tabular-nums; pointer-events: none; }
+    .file-size { min-width: 5.25rem; }
+    .file-length { min-width: 4.25rem; }
     #private-file-list .play-btn, button.play-btn { font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 20px; border: none; background: #1e3a5f; color: white; cursor: pointer; margin-top: 0; transition: background 0.15s; }
     #private-file-list .play-btn:hover, button.play-btn:hover { background: #16304f; }
-    #private-browser .mp3-controls button { font-size: 0.615rem; padding: 0.26rem 0.675rem; border-radius: 20px; border: 1.5px solid #1e3a5f; background: #1e3a5f; color: white; cursor: pointer; margin-top: 0; transition: background 0.15s; }
-    #private-browser .mp3-controls button:hover { background: #16304f; border-color: #16304f; }
+    #private-browser .mp3-controls button,
+    #private-browser .image-controls button { font-size: 0.615rem; padding: 0.26rem 0.675rem; border-radius: 20px; border: 1.5px solid #1e3a5f; background: #1e3a5f; color: white; cursor: pointer; margin-top: 0; transition: background 0.15s; }
+    #private-browser .mp3-controls button:hover,
+    #private-browser .image-controls button:hover { background: #16304f; border-color: #16304f; }
     #upload-area { border: 1.5px dashed #b0bec5 !important; border-radius: 8px !important; background: #f8fafc; }
     #upload-area button { font-size: 0.615rem !important; padding: 0.26rem 0.675rem !important; margin-top: 0 !important; }
     #upload-area button:disabled { opacity: 0.4; cursor: not-allowed; background: transparent !important; color: #1e3a5f !important; }
@@ -65,18 +128,136 @@
     #upload-input::file-selector-button:hover { background: #16304f; }
     .folder-item a { font-weight: 500; }
     #private-browser button.toolbar-btn { font-size: 0.615rem; padding: 0.26rem 0.675rem; }
-    #private-browser .folder-action-btn { font-size: 0.55rem; padding: 0.2rem 0.55rem; border-radius: 20px; border: 2px solid #dc2626; background: transparent; color: #dc2626; cursor: pointer; margin-top: 0; margin-left: auto; transition: all 0.15s; white-space: nowrap; opacity: 0.6; }
-    .folder-item:hover .folder-action-btn { opacity: 1; }
+    .toolbar-menu { position: relative; display: inline-block; }
+    .toolbar-menu-list,
+    .file-menu-list {
+      position: absolute; z-index: 40; top: calc(100% + 0.2rem);
+      padding: 0.2rem 0; margin: 0;
+      background: #fff; border: 1.5px solid #1e3a5f; border-radius: 8px;
+    }
+    .toolbar-menu-list { left: 0; min-width: 10.5rem; }
+    .file-menu-list { left: auto; right: 0; width: max-content; min-width: 0; }
+    .toolbar-menu-list[hidden],
+    .file-menu-list[hidden] { display: none; }
+    #private-browser .toolbar-menu-list button,
+    #private-browser .file-menu-list button {
+      display: block; width: 100%; box-sizing: border-box; text-align: left;
+      margin-top: 0; border: none; border-radius: 0; background: none; cursor: pointer;
+      padding: 0.35rem 0.7rem; font-size: 0.8rem; font-family: Arial, sans-serif; font-weight: 500; color: #1e3a5f;
+      white-space: nowrap;
+    }
+    #private-browser .toolbar-menu-list button:hover,
+    #private-browser .file-menu-list button:hover { background: #eef3f8; color: #1e3a5f; }
+    .file-menu { position: relative; flex-shrink: 0; }
+    .folder-item .folder-actions { margin-left: auto; display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0; }
+    #private-browser .folder-upload-video-btn { font-size: 0.55rem; padding: 0.2rem 0.55rem; margin-top: 0; opacity: 1; }
+    #private-browser .folder-action-btn { font-size: 0.55rem; padding: 0.2rem 0.55rem; border-radius: 20px; border: 2px solid #dc2626; background: transparent; color: #dc2626; cursor: pointer; margin-top: 0; transition: all 0.15s; white-space: nowrap; opacity: 0.6; }
+    .folder-item:hover .folder-action-btn,
+    .file-item:hover .folder-action-btn { opacity: 1; }
     #private-browser .folder-action-btn:hover { background: #dc2626; color: white; border-color: #dc2626; }
-    #private-browser .file-delete-btn { font-size: 0.615rem; padding: 0.26rem 0.675rem; border-radius: 20px; border: 2px solid #dc2626; background: transparent; color: #dc2626; cursor: pointer; margin-top: 0; margin-left: auto; white-space: nowrap; opacity: 0.5; transition: all 0.15s; }
-    .file-item:hover .file-delete-btn { opacity: 1; }
-    #private-browser .file-delete-btn:hover { background: #dc2626; color: white; border-color: #dc2626; }
+    #private-browser .folder-action-btn.rename { border-color: #1e3a5f; color: #1e3a5f; }
+    #private-browser .folder-action-btn.rename:hover { background: #1e3a5f; color: white; border-color: #1e3a5f; }
+    #private-browser .file-menu-toggle {
+      min-width: 1.4rem; padding: 0.1rem 0.2rem; margin: 0; border: none; border-radius: 4px;
+      background: transparent; color: #aaa; cursor: pointer; font-size: 1rem; font-weight: 700;
+      line-height: 1; letter-spacing: 0.06em; opacity: 0;
+    }
+    #private-browser .file-item:hover .file-menu-toggle,
+    #private-browser .file-item:focus-within .file-menu-toggle,
+    #private-browser .folder-item:hover .file-menu-toggle,
+    #private-browser .folder-item:focus-within .file-menu-toggle,
+    #private-browser .file-menu-toggle:focus,
+    #private-browser .file-menu-toggle[aria-expanded="true"] { opacity: 1; color: #1e3a5f; background: transparent; }
+    @media (hover: none) {
+      #private-browser .file-menu-toggle { opacity: 1; }
+    }
+    #video-edit-modal { position: fixed; inset: 0; z-index: 1250; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; }
+    #video-edit-modal[hidden] { display: none; }
+    #video-edit-box { background: white; border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 420px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); margin: 1rem; }
+    #video-edit-box h3 { margin: 0 0 0.4rem; color: #1e3a5f; font-size: 1rem; }
+    #video-edit-note { margin: 0 0 0.75rem; font-size: 0.8rem; color: #64748b; }
+    #video-edit-box label { font-size: 0.75rem; color: #64748b; display: block; margin-top: 0.6rem; }
+    #video-edit-box input { display: block; width: 100%; box-sizing: border-box; margin: 0.35rem 0; padding: 0.45rem 0.75rem; border: 1.5px solid #dde3ec; border-radius: 8px; font-size: 0.88rem; font-family: Arial, sans-serif; }
+    #video-edit-box input:focus { border-color: #1e3a5f; outline: none; }
+    #video-edit-times { display: flex; gap: 0.5rem; }
+    #video-edit-times[hidden],
+    #video-edit-files[hidden] { display: none; }
+    #video-edit-times label { flex: 1; }
+    #video-edit-files { margin: 0.4rem 0 0; padding-left: 1.1rem; font-size: 0.85rem; color: #1e3a5f; }
+    #video-edit-files li { margin: 0.25rem 0; }
+    #video-edit-files button { font-size: 0.7rem; margin-left: 0.35rem; }
+    #video-edit-error { min-height: 1.1rem; margin: 0.4rem 0 0; font-size: 0.8rem; color: #e11d48; }
+    #video-edit-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+    #video-edit-actions button { font-size: 0.82rem; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; border: 1.5px solid #1e3a5f; }
+    #video-edit-save { background: #1e3a5f; color: white; }
+    #video-edit-save:disabled { opacity: 0.5; cursor: wait; }
+    #video-edit-cancel { background: transparent; color: #1e3a5f; }
 
-    .tab-bar { display: flex; align-items: flex-end; gap: 3px; margin-top: 0.75rem; margin-bottom: 0; border-bottom: 2px solid #1e3a5f; }
-    .tab-btn { margin-top: 0 !important; border-radius: 7px 7px 0 0 !important; border: 2px solid #1e3a5f !important; border-bottom: none !important; background: #c8d8e8 !important; color: #1e3a5f !important; font-size: 0.82rem; font-weight: 600; font-family: Arial, sans-serif; padding: 0.35rem 1.25rem 0.45rem !important; cursor: pointer; position: relative; bottom: -2px; transition: background 0.15s, color 0.15s, padding 0.1s; }
+    .tab-bar { display: flex; align-items: flex-end; gap: 3px; margin-top: 0.75rem; margin-bottom: 0; border-bottom: 2px solid #1e3a5f; flex-wrap: nowrap; overflow-x: auto; }
+    .tab-btn { margin-top: 0 !important; border-radius: 7px 7px 0 0 !important; border: 2px solid #1e3a5f !important; border-bottom: none !important; background: #c8d8e8 !important; color: #1e3a5f !important; font-size: 0.82rem; font-weight: 600; font-family: Arial, sans-serif; padding: 0.35rem 1.25rem 0.45rem !important; cursor: pointer; position: relative; bottom: -2px; transition: background 0.15s, color 0.15s, padding 0.1s; white-space: nowrap; flex-shrink: 0; }
     .tab-btn:hover { background: #4a7fa5 !important; color: white !important; }
     .tab-btn.active { background: #1e3a5f !important; color: white !important; padding-top: 0.5rem !important; bottom: -2px; }
     .tab-content-area { border-top: none; padding-top: 0.75rem; }
+    #private-video-status { display: none; padding-top: 0.75rem; }
+    #private-video-status.is-open { display: block; }
+    #private-video-status-copy { margin: 0 0 0.45rem; font-size: 0.82rem; color: #64748b; }
+    .video-status-tab-name { color: #2563eb; font-weight: 600; }
+    #private-video-status-list { list-style: none; padding: 0; margin: 0.35rem 0 0; }
+    #private-video-status-list > li { margin: 0 0 0.75rem; padding: 0; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; overflow: hidden; }
+    #private-video-status-list > li:last-child { margin-bottom: 0; }
+    .video-job { display: block; }
+    .video-job > summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 0.85rem 1rem;
+      font-size: 0.88rem;
+      color: #1e3a5f;
+    }
+    .video-job > summary::-webkit-details-marker { display: none; }
+    .video-job > summary::marker { content: ""; }
+    .video-job > summary::before {
+      content: "▸";
+      display: inline-block;
+      width: 1.15rem;
+      color: #1e3a5f;
+      font-size: 0.8rem;
+    }
+    .video-job[open] > summary::before { content: "▾"; }
+    .video-job-name { font-weight: 600; color: #1e3a5f; }
+    .video-job-summary-state { color: #64748b; font-size: 0.8rem; font-weight: 500; }
+    .video-job-summary-state.is-ready { color: #15803d; }
+    .video-job-summary-state.is-failed { color: #dc2626; }
+    .video-job-summary-state.is-busy { color: #1e3a5f; }
+    .video-job-table { width: 100%; border-collapse: collapse; margin: 0; }
+    .video-job-table th,
+    .video-job-table td {
+      border-top: 1px solid #e2e8f0;
+      padding: 0.5rem 1rem;
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.85rem;
+    }
+    .video-job-table th {
+      width: 7.5rem;
+      color: #64748b;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .video-job-table td { color: #1e3a5f; }
+    .video-job-state { font-size: 0.85rem; color: #64748b; }
+    .video-job-state.is-ready { color: #15803d; }
+    .video-job-state.is-failed { color: #dc2626; }
+    .video-job-state.is-busy { color: #1e3a5f; }
+    .video-job-busy-track { display: inline-block; width: 3.4rem; height: 0.35rem; margin-left: 0.4rem; vertical-align: middle; background: #e8eef4; border-radius: 999px; overflow: hidden; }
+    .video-job-busy-bar { display: block; height: 100%; width: 40%; background: #2563eb; border-radius: 999px; animation: apple-progress-slide 1.05s ease-in-out infinite; }
+    .video-job-progress-track { display: block; height: 0.55rem; background: #e8eef4; border-radius: 999px; overflow: hidden; }
+    .video-job-progress-fill { display: block; height: 100%; background: #1e3a5f; border-radius: 999px; }
+    .video-job-progress-label { display: block; margin-top: 0.3rem; font-size: 0.75rem; color: #64748b; }
+
+    .private-loading { padding: 1.35rem 0.5rem 1.15rem; text-align: center; }
+    .private-loading p { margin: 0 0 0.7rem; color: #64748b; font-size: 0.82rem; font-weight: 500; }
+    .private-loading-track { height: 3px; max-width: 168px; margin: 0 auto; background: rgba(30, 58, 95, 0.14); border-radius: 99px; overflow: hidden; }
+    .private-loading-bar { height: 100%; width: 36%; background: #1e3a5f; border-radius: 99px; animation: apple-progress-slide 1.05s ease-in-out infinite; }
 
     #audio-player { display: none; position: fixed; bottom: 0; left: 220px; right: 0; background: #1e3a5f; color: #fff; padding: 0.6rem 1rem; align-items: center; gap: 0.75rem; z-index: 999; flex-wrap: wrap; }
     #audio-player button { background: transparent; border: 1.5px solid rgba(255,255,255,0.4); color: #fff; padding: 0.2rem 0.7rem; cursor: pointer; border-radius: 20px; font-size: 0.85rem; transition: all 0.15s; }
@@ -85,13 +266,467 @@
     #player-progress { flex: 2; min-width: 80px; cursor: pointer; }
     #player-count { font-size: 0.75rem; color: rgba(255,255,255,0.6); }
 
+    #inline-video-player {
+      display: none; position: fixed; inset: 0 0 0 220px; z-index: 1100;
+      background: rgba(15, 28, 45, 0.94); flex-direction: column; align-items: center; justify-content: center;
+      padding: 1rem 1rem 8.5rem; box-sizing: border-box;
+    }
+    #inline-video-player.is-open { display: flex; }
+    #inline-video { max-width: min(960px, 100%); max-height: calc(100vh - 10rem); background: #000; border-radius: 4px; }
+    #inline-video-skip { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.65rem; }
+    #inline-video-skip button,
+    #inline-video-controls button {
+      background: transparent; border: 1.5px solid rgba(255,255,255,0.4); color: #fff;
+      padding: 0.25rem 0.8rem; cursor: pointer; border-radius: 20px; font-size: 0.9rem; font-family: Arial, sans-serif;
+    }
+    #inline-video-skip button:hover,
+    #inline-video-controls button:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.7); }
+    #inline-video-controls {
+      position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;
+      padding: 0.75rem 1rem; background: #1e3a5f; color: #fff;
+    }
+    #inline-video-clip {
+      flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem;
+    }
+    #inline-video-clip[hidden] { display: none; }
+    #inline-video-clip-start, #inline-video-clip-end { font-size: 0.85rem; min-width: 4.5rem; }
+    #inline-video-clip-error { flex: 1 1 100%; margin: 0; min-height: 0; font-size: 0.8rem; color: #fecdd3; }
+    #inline-video-clip-error:empty { display: none; }
+    #inline-video-name { flex: 1; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    #private-slideshow {
+      display: none; position: fixed; inset: 0 0 0 220px; z-index: 1100;
+      background: rgba(15, 28, 45, 0.94); flex-direction: column; align-items: center; justify-content: center;
+      padding: 1rem 1rem 5.5rem; box-sizing: border-box;
+    }
+    #private-slideshow.is-open { display: flex; }
+    #private-slide-img { max-width: 100%; max-height: calc(100vh - 7rem); object-fit: contain; border-radius: 4px; }
+    #private-slide-status { margin: 0.6rem 0 0; color: rgba(255,255,255,0.85); font-size: 0.9rem; text-align: center; max-width: min(720px, 92%); line-height: 1.4; white-space: pre-wrap; }
+
+    #private-captions {
+      display: none; position: fixed; inset: 0 0 0 220px; z-index: 1200;
+      background: rgba(15, 28, 45, 0.94); flex-direction: column; align-items: center; justify-content: center;
+      padding: 1rem 1rem 5.5rem; box-sizing: border-box;
+    }
+    #private-captions.is-open { display: flex; }
+    #private-add-slideshow {
+      display: none; position: fixed; inset: 0 0 0 220px; z-index: 1300;
+      background: rgba(15, 28, 45, 0.55); align-items: center; justify-content: center;
+      padding: 1rem; box-sizing: border-box; overflow: auto;
+    }
+    #private-add-slideshow.is-open { display: flex; }
+    .visually-hidden {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+    }
+    #private-add-slideshow-box {
+      width: min(420px, 100%); background: #fff; border-radius: 12px; padding: 1.15rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18); margin: auto;
+    }
+    #private-add-slideshow-box h3 { margin: 0 0 0.85rem; color: #1e3a5f; font-size: 1.05rem; }
+    #private-add-slideshow-thumb {
+      display: block; width: 100%; max-height: 9.5rem; object-fit: contain;
+      border-radius: 8px; background: #0f1c2d; margin: 0 0 0.75rem;
+    }
+    .private-add-slideshow-card {
+      background: #f8fafc; border: 1.5px solid #e8eef4; border-radius: 12px; padding: 0.9rem 0.95rem;
+    }
+    .private-add-slideshow-card h4 {
+      margin: 0 0 0.55rem; font-size: 0.88rem; color: #1e3a5f; font-weight: 600;
+    }
+    .private-add-slideshow-or {
+      display: flex; align-items: center; gap: 0.65rem; margin: 0.7rem 0;
+      color: #94a3b8; font-size: 0.78rem; font-weight: 600; text-transform: lowercase;
+    }
+    .private-add-slideshow-or::before,
+    .private-add-slideshow-or::after {
+      content: ""; flex: 1; height: 1px; background: #e8eef4;
+    }
+    #private-add-slideshow-title {
+      width: 100%; box-sizing: border-box; margin: 0 0 0.55rem; padding: 0.45rem 0.75rem;
+      border: 1.5px solid #dde3ec; border-radius: 8px; font-size: 0.9rem; font-family: Arial, sans-serif;
+      background: #fff; color: #1e3a5f;
+    }
+    #private-add-slideshow-title::placeholder {
+      color: #c5ced8; -webkit-text-fill-color: #c5ced8; opacity: 1;
+    }
+    #private-add-slideshow-title:focus { outline: none; border-color: #1e3a5f; }
+    #private-add-slideshow-title:focus::placeholder {
+      color: transparent; -webkit-text-fill-color: transparent; opacity: 0;
+    }
+    #private-add-slideshow-create,
+    #private-add-slideshow-add {
+      background: #1e3a5f; color: #fff; border: 1.5px solid #1e3a5f; border-radius: 20px;
+      padding: 0.35rem 0.9rem; font-size: 0.82rem; font-family: Arial, sans-serif; cursor: pointer;
+    }
+    #private-add-slideshow-add { margin-top: 0.55rem; }
+    #private-add-slideshow-add:disabled {
+      opacity: 0.4; cursor: not-allowed;
+    }
+    #private-add-slideshow-list { list-style: none; padding: 0; margin: 0; max-height: 12rem; overflow: auto; }
+    #private-add-slideshow-list li { margin: 0; }
+    .private-add-slideshow-item {
+      display: flex; justify-content: space-between; gap: 0.75rem; width: 100%;
+      background: #fff; border: 1.5px solid #e8eef4; border-radius: 8px; color: #1e3a5f;
+      padding: 0.5rem 0.7rem; font-size: 0.9rem; font-family: Arial, sans-serif; cursor: pointer; text-align: left;
+      margin: 0 0 0.4rem;
+    }
+    .private-add-slideshow-item.is-selected {
+      border-color: #1e3a5f; background: #eef3f8;
+    }
+    .private-add-slideshow-item:last-child { margin-bottom: 0; }
+    .private-add-slideshow-item span:last-child { color: #94a3b8; font-size: 0.78rem; }
+    .private-add-slideshow-empty { color: #64748b; font-size: 0.85rem; padding: 0.25rem 0; }
+    #private-add-slideshow-status { min-height: 1.1em; margin: 0.45rem 0 0; font-size: 0.8rem; color: #64748b; }
+    #private-add-slideshow-close {
+      background: transparent; color: #64748b; border: 1.5px solid #dde3ec; border-radius: 20px;
+      padding: 0.3rem 0.85rem; font-size: 0.82rem; font-family: Arial, sans-serif; cursor: pointer; margin-top: 0.75rem;
+    }
+    .private-captions-body { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; min-height: 0; }
+    #private-caption-img { max-width: 100%; max-height: calc(100vh - 16rem); object-fit: contain; border-radius: 4px; }
+    .private-captions-editor { width: min(640px, 92%); }
+    #private-caption-name { margin: 0 0 0.35rem; color: rgba(255,255,255,0.75); font-size: 0.85rem; text-align: center; }
+    #private-caption-text {
+      width: 100%; box-sizing: border-box; min-height: 5rem; border-radius: 8px;
+      border: 1.5px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); color: #fff;
+      font-family: Arial, sans-serif; font-size: 0.95rem; padding: 0.6rem 0.75rem; resize: vertical;
+    }
+    #private-caption-text:focus { outline: none; border-color: rgba(255,255,255,0.7); }
+    .private-caption-save-row { display: flex; justify-content: center; align-items: center; gap: 0.75rem; margin-top: 0.45rem; }
+    #private-caption-save {
+      background: transparent; border: 1.5px solid rgba(255,255,255,0.45); color: #fff;
+      padding: 0.28rem 0.95rem; cursor: pointer; border-radius: 20px; font-size: 0.85rem;
+      font-family: Arial, sans-serif; flex-shrink: 0;
+    }
+    #private-caption-save:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.8); }
+    #private-caption-save-status { margin: 0; font-size: 0.78rem; color: rgba(255,255,255,0.55); min-height: 1.1em; text-align: center; }
+    #private-captions-controls {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      display: flex; justify-content: center; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+      padding: 0.75rem 1rem; background: #1e3a5f; color: #fff;
+    }
+    #private-captions-controls button { background: transparent; border: 1.5px solid rgba(255,255,255,0.4); color: #fff; padding: 0.25rem 0.8rem; cursor: pointer; border-radius: 20px; font-size: 0.9rem; font-family: Arial, sans-serif; }
+    #private-captions-controls button:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.7); }
+    #private-caption-count { font-size: 0.8rem; color: rgba(255,255,255,0.7); min-width: 4rem; text-align: center; }
+    #private-slideshow-controls {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      display: flex; justify-content: center; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+      padding: 0.75rem 1rem; background: #1e3a5f; color: #fff;
+    }
+    #private-slideshow-controls button { background: transparent; border: 1.5px solid rgba(255,255,255,0.4); color: #fff; padding: 0.25rem 0.8rem; cursor: pointer; border-radius: 20px; font-size: 0.9rem; font-family: Arial, sans-serif; }
+    #private-slideshow-controls button:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.7); }
+    #private-slide-count { font-size: 0.8rem; color: rgba(255,255,255,0.7); min-width: 4rem; text-align: center; }
+
+    #pdfsearch-section { max-width: 800px; font-family: Arial, sans-serif; }
+    #pdfsearch-panel { margin-top: 0.25rem; background: transparent; padding: 0; box-shadow: none; }
+    .pdfsearch-card {
+      background: white; border-radius: 12px; padding: 1.25rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-top: 1rem;
+      position: relative;
+    }
+    .pdfsearch-card-title { margin: 0 0 0.65rem; font-size: 1.05rem; color: #1e3a5f; }
+    #pdfsearch-app-head { display: flex; justify-content: space-between; align-items: center; margin: 0.35rem 0.15rem 0; }
+    .pdfsearch-select {
+      display: block; width: 100%; box-sizing: border-box; margin: 0 0 0.65rem;
+      padding: 0.45rem 0.75rem; border: 1.5px solid #dde3ec; border-radius: 8px;
+      font-size: 0.9rem; font-family: Arial, sans-serif; background: #fff; color: #1e3a5f;
+    }
+    .pdfsearch-select:focus { outline: none; border-color: #1e3a5f; }
+    .pdfsearch-mode-toggle { display: inline-flex; flex-wrap: nowrap; width: auto; max-width: 100%; margin: 0 0 0.75rem; }
+    .pdfsearch-mode-toggle button {
+      background: #fff !important; color: #1e3a5f !important; border: 1.5px solid #1e3a5f !important;
+      border-radius: 0 !important; padding: 0.28rem 1rem !important;
+      flex: 0 1 auto; min-width: 0; white-space: nowrap; font-size: 0.82rem !important;
+    }
+    .pdfsearch-mode-toggle button + button { border-left: none !important; }
+    .pdfsearch-mode-toggle button:first-child { border-radius: 20px 0 0 20px !important; }
+    .pdfsearch-mode-toggle button:last-child { border-radius: 0 20px 20px 0 !important; }
+    #pdfsearch-app .pdfsearch-mode-toggle button:not(:first-child):not(:last-child) { border-radius: 0 !important; }
+    .pdfsearch-mode-toggle button.is-active { background: #1e3a5f !important; color: #fff !important; }
+    #pdfsearch-search-box-list {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0; margin: 0 0 0.75rem;
+      background: #f4f6f8; border: 1px solid #e4e8ee; border-radius: 8px; overflow: hidden;
+    }
+    #pdfsearch-search-box-list[hidden] { display: none; }
+    #pdfsearch-search-box-list label {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.82rem; color: #1e3a5f; cursor: pointer; white-space: normal;
+      min-width: 0; line-height: 1.3;
+      background: #f4f6f8; padding: 0.42rem 0.7rem; margin: 0;
+      border-bottom: 1px solid #e4e8ee;
+    }
+    #pdfsearch-search-box-list label:nth-child(odd) { box-shadow: inset -1px 0 0 #e4e8ee; }
+    #pdfsearch-search-box-list label:last-child,
+    #pdfsearch-search-box-list label:nth-last-child(2):nth-child(odd) { border-bottom: none; }
+    #pdfsearch-search-box-list input {
+      width: 0.95rem; height: 0.95rem; accent-color: #1e3a5f; margin: 0;
+    }
+    #pdfsearch-panel-browse .pdfsearch-mode-toggle { flex-wrap: wrap; }
+    #pdfsearch-box-all, #pdfsearch-extract-all { list-style: none; padding: 0; margin: 0 0 0.65rem; }
+    #pdfsearch-extract-all .pdfsearch-extract-row {
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+      padding: 0.4rem 0; border-bottom: 1px solid #f0f4f8;
+    }
+    .pdfsearch-extract-check { width: 1rem; height: 1rem; margin: 0; accent-color: #1e3a5f; flex: 0 0 auto; }
+    #pdfsearch-extract-actions {
+      display: flex; align-items: center; gap: 0.65rem;
+      margin: 0 0 0.15rem; padding: 0.1rem 0 0.5rem;
+      border-bottom: 1px solid #f0f4f8;
+    }
+    #pdfsearch-extract-actions[hidden] { display: none; }
+    #pdfsearch-extract-actions label {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-size: 0.85rem; color: #1e3a5f; cursor: pointer;
+    }
+    #pdfsearch-extract-bulk { display: inline-flex; align-items: center; gap: 0.4rem; }
+    #pdfsearch-app #pdfsearch-extract-actions button.pdfsearch-remove { margin-left: 0; }
+    #pdfsearch-app button.pdfsearch-remove:disabled { opacity: 0.4; cursor: not-allowed; }
+    #pdfsearch-app button.pdfsearch-remove:disabled:hover {
+      background: transparent; color: #e11d48; border-color: #e11d48;
+    }
+    .pdfsearch-extract-label {
+      flex: 1 1 auto; min-width: 0; font-size: 0.9rem; color: #1e3a5f;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .pdfsearch-extract-row-actions {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      flex: 0 0 auto; margin-left: auto;
+    }
+    .pdfsearch-extract-url {
+      flex: 1 1 100%; width: 100%; min-width: 0; box-sizing: border-box;
+      margin: 0.15rem 0 0.2rem; padding: 0.45rem 0.55rem;
+      border: 1px solid #cbd5e1; border-radius: 8px; color: #1e3a5f; background: #fff;
+      resize: none; overflow: hidden; white-space: pre-wrap; word-break: break-all;
+      line-height: 1.45; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.78rem; user-select: text; cursor: text;
+    }
+    #pdfsearch-box-all .pdfsearch-doc {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.75rem;
+    }
+    #pdfsearch-file-wrap.is-inline {
+      flex: 1 1 100%; width: 100%; margin: 0.35rem 0 0.1rem;
+    }
+    #pdfsearch-file-wrap.is-inline > label { display: none !important; }
+    #pdfsearch-file-wrap.is-inline .pdfsearch-select { margin: 0; }
+    #pdfsearch-browse-detail.is-inline {
+      flex: 1 1 100%; width: 100%; margin: 0.35rem 0 0.55rem;
+    }
+    #pdfsearch-box-search-wrap { position: relative; margin: 0 0 0.65rem; }
+    #pdfsearch-box-suggest {
+      display: none; position: absolute; left: 0; right: 0; top: calc(100% - 8px); z-index: 20;
+      margin: 0; padding: 0.25rem 0; list-style: none; background: #fff;
+      border: 1.5px solid #dde3ec; border-radius: 0 0 8px 8px;
+      box-shadow: 0 8px 18px rgba(15, 28, 45, 0.12); max-height: 14rem; overflow: auto;
+    }
+    #pdfsearch-box-suggest.is-open { display: block; }
+    #pdfsearch-box-suggest button {
+      display: block; width: 100%; text-align: left; background: transparent !important;
+      border: none !important; color: #1e3a5f !important; border-radius: 0 !important;
+      padding: 0.4rem 0.75rem !important; font-size: 0.88rem !important; font-weight: 500;
+    }
+    #pdfsearch-box-suggest button:hover { background: #f1f5f9 !important; }
+    .pdfsearch-browse-desc { font-size: 0.88rem; color: #334155; line-height: 1.45; margin: 0 0 0.75rem; }
+    #pdfsearch-form {
+      display: flex; flex-wrap: nowrap; align-items: flex-start; gap: 0.5rem; margin: 0 0 0.5rem;
+    }
+    .pdfsearch-suggest-wrap { position: relative; flex: 0 1 50%; max-width: 50%; min-width: 0; }
+    #pdfsearch-form > button { flex-shrink: 0; margin-left: auto; }
+    #pdfsearch-home { white-space: normal; line-height: 1.25; text-align: center; }
+    #pdfsearch-q { width: 100%; box-sizing: border-box; min-width: 0; padding: 0.45rem 0.75rem; border: 1.5px solid #dde3ec; border-radius: 8px; font-size: 0.9rem; font-family: Arial, sans-serif; }
+    #pdfsearch-q:focus { outline: none; border-color: #1e3a5f; }
+    #pdfsearch-suggest {
+      display: none; position: absolute; left: 0; right: 0; top: calc(100% - 2px); z-index: 20;
+      margin: 0; padding: 0.25rem 0; list-style: none; background: #fff;
+      border: 1.5px solid #dde3ec; border-top: none; border-radius: 0 0 8px 8px;
+      box-shadow: 0 8px 18px rgba(15, 28, 45, 0.12); max-height: 14rem; overflow: auto;
+    }
+    #pdfsearch-suggest.is-open { display: block; }
+    #pdfsearch-suggest button {
+      display: block; width: 100%; text-align: left; background: transparent !important;
+      border: none !important; color: #1e3a5f !important; border-radius: 0 !important;
+      padding: 0.4rem 0.75rem !important; font-size: 0.88rem !important; font-weight: 500;
+    }
+    #pdfsearch-suggest button:hover, #pdfsearch-suggest button.is-active { background: #f1f5f9 !important; }
+    #pdfsearch-suggest .pdfsearch-suggest-count,
+    #pdfsearch-box-suggest .pdfsearch-suggest-count { color: #94a3b8; font-size: 0.75rem; margin-left: 0.15rem; }
+    .pdfsearch-desc {
+      display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+      overflow: hidden; font-size: 0.83rem; color: #475569; margin: 0.25rem 0 0; line-height: 1.4;
+    }
+    .pdfsearch-desc.is-clamped { cursor: pointer; }
+    .pdfsearch-desc.is-expanded {
+      display: block; -webkit-line-clamp: unset; overflow: visible; cursor: pointer;
+    }
+    .pdfsearch-suggest-kind { color: #94a3b8; font-size: 0.72rem; margin-left: 0.4rem; font-weight: 500; }
+    #pdfsearch-status-row, #pdfsearch-browse-status-row, .pdfsearch-status-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin: 0.25rem 0 0.75rem; }
+    .pdfsearch-doc-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.15rem; }
+    .pdfsearch-doc-head .pdfsearch-meta { display: inline; margin-top: 0; }
+    #pdfsearch-form > button, #pdfsearch-app button { font-size: 0.82rem; padding: 0.35rem 0.9rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; border: 1.5px solid #1e3a5f; background: #1e3a5f; color: white; }
+    #pdfsearch-form > button:hover, #pdfsearch-app button:hover { background: #16304f; }
+    #pdfsearch-app button[onclick="handlePdfSearchSignOut()"] { border-color: #ddd; color: #888; background: transparent; }
+    #pdfsearch-app button[onclick="handlePdfSearchSignOut()"]:hover { border-color: #e11d48; color: #e11d48; background: transparent; }
+    .pdfsearch-status { font-size: 0.83rem; color: #64748b; margin: 0; flex: 1; }
+    #pdfsearch-upload-status.is-failed { color: #e11d48; font-weight: 600; }
+    #pdfsearch-catalog { list-style: none; padding: 0; margin: 0; }
+    .pdfsearch-doc, .pdfsearch-hit { padding: 0.55rem 0; border-bottom: 1px solid #f0f4f8; }
+    .pdfsearch-hit-box { margin: 0 0 0.35rem; padding-bottom: 0.15rem; }
+    .pdfsearch-hit-box + .pdfsearch-hit-box {
+      margin-top: 0.85rem; padding-top: 0.65rem; border-top: 1px solid #e2e8f0;
+    }
+    .pdfsearch-hit-box-name {
+      margin: 0 0 0.1rem; font-size: 0.78rem; font-weight: 700; color: #1e3a5f;
+      letter-spacing: 0.02em; text-transform: none;
+    }
+    .pdfsearch-hit-box .pdfsearch-hit:last-child { border-bottom: none; }
+    .pdfsearch-open {
+      background: none !important; border: none !important; color: #1d4ed8 !important;
+      padding: 0 !important; font-size: 0.95rem !important; font-weight: 600;
+      text-align: left; text-decoration: underline; cursor: pointer; font-family: inherit;
+    }
+    .pdfsearch-open.is-active { color: #1e3a5f !important; text-decoration: none; }
+    .pdfsearch-meta { display: block; font-size: 0.78rem; color: #94a3b8; margin-top: 0.15rem; }
+    .pdfsearch-badge { color: #b45309; font-weight: 600; }
+    .pdfsearch-snippet {
+      display: block; width: 100%; box-sizing: border-box;
+      font-size: 0.85rem !important; font-weight: 400 !important; color: #334155 !important;
+      text-decoration: none !important; margin: 0.35rem 0 0; line-height: 1.45;
+      padding: 0.35rem 0 !important; border-radius: 6px;
+    }
+    .pdfsearch-snippet:hover { background: #f8fafc !important; }
+    .pdfsearch-page { color: #1d4ed8; font-weight: 700; margin-right: 0.35rem; text-decoration: underline; }
+
+    #pdfsearch-viewer {
+      display: none; position: fixed; inset: 0 0 0 220px; z-index: 1100;
+      background: #0f1c2d; flex-direction: column;
+    }
+    #pdfsearch-viewer.is-open { display: flex; }
+    #pdfsearch-viewer-bar {
+      display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; flex-wrap: wrap;
+      position: relative; z-index: 6;
+      padding: 0.65rem 1rem; background: #1e3a5f; color: #fff;
+    }
+    #pdfsearch-viewer-title { flex: 1; font-size: 0.9rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 6rem; }
+    #pdfsearch-viewer-goto { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; white-space: nowrap; }
+    #pdfsearch-viewer-page {
+      width: 4.5rem; box-sizing: border-box;
+      background: #1e3a5f; color: #fff; border: 1.5px solid rgba(255,255,255,0.4);
+      border-radius: 8px; font-family: Arial, sans-serif; font-size: 0.85rem; padding: 0.2rem 0.4rem;
+    }
+    #pdfsearch-viewer-status a, #pdfsearch-viewer-status button { color: #fff; }
+    #pdfsearch-viewer-extract[aria-expanded="true"] { background: rgba(255,255,255,0.15); }
+    #pdfsearch-viewer-extract-overlay {
+      position: absolute; inset: 0; z-index: 5;
+      background: rgba(15, 28, 45, 0.45);
+    }
+    #pdfsearch-viewer-extract-overlay[hidden] { display: none; }
+    #pdfsearch-viewer-extract-controls {
+      position: absolute; top: 4.25rem; right: 1rem;
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+      width: min(52rem, calc(100% - 2rem));
+      padding: 0.75rem; background: #1e3a5f; color: #fff;
+      border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    #pdfsearch-viewer-extract-controls select,
+    #pdfsearch-viewer-extract-controls input {
+      background: #1e3a5f; color: #fff; border: 1.5px solid rgba(255,255,255,0.4);
+      border-radius: 8px; font-family: Arial, sans-serif; font-size: 0.85rem; padding: 0.2rem 0.45rem;
+    }
+    #pdfsearch-viewer-extract-controls input { width: 3.5rem; }
+    #pdfsearch-viewer-extract-controls textarea#pdfsearch-viewer-print-url {
+      flex: 1 1 100%; width: 100%; min-width: 0; box-sizing: border-box;
+      margin: 0; padding: 0.45rem 0.55rem;
+      background: #1e3a5f; color: #fff; border: 1.5px solid rgba(255,255,255,0.4);
+      border-radius: 8px; resize: none; overflow: hidden;
+      white-space: pre-wrap; word-break: break-all; line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.78rem; user-select: text; cursor: text;
+    }
+    #pdfsearch-viewer-print-url[hidden] { display: none; }
+    #pdfsearch-viewer-print {
+      background: transparent; border: 1.5px solid rgba(255,255,255,0.4); color: #fff;
+      padding: 0.25rem 0.8rem; cursor: pointer; border-radius: 20px; font-size: 0.9rem; font-family: Arial, sans-serif;
+    }
+    #pdfsearch-viewer-print:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.7); }
+    #pdfsearch-viewer-print:disabled { opacity: 0.35; cursor: not-allowed; }
+    #pdfsearch-viewer-extract-note { font-size: 0.85rem; }
+    #pdfsearch-viewer-extract-range { display: inline-flex; align-items: center; gap: 0.25rem; }
+    #pdfsearch-viewer-extract-range[hidden] { display: none; }
+    .pdfsearch-doc-actions {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem;
+      margin-top: 0.85rem; width: 100%;
+    }
+    #pdfsearch-app button.pdfsearch-remove {
+      margin-left: auto;
+      font-size: 0.75rem !important;
+      padding: 0.2rem 0.7rem !important;
+      border-radius: 20px;
+      border: 1.5px solid #e11d48;
+      background: transparent;
+      color: #e11d48;
+    }
+    #pdfsearch-app button.pdfsearch-remove:hover {
+      background: #e11d48; color: #fff; border-color: #e11d48;
+    }
+    #pdfsearch-viewer-progress {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      z-index: 3; min-width: 180px;
+    }
+    #pdfsearch-viewer-close {
+      background: transparent; border: 1.5px solid rgba(255,255,255,0.4); color: #fff;
+      padding: 0.25rem 0.8rem; cursor: pointer; border-radius: 20px; font-size: 0.9rem; font-family: Arial, sans-serif;
+    }
+    #pdfsearch-viewer-close:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.7); }
+    #pdfsearch-viewer-bar button {
+      background: transparent; border: 1.5px solid rgba(255,255,255,0.4); color: #fff;
+      padding: 0.25rem 0.8rem; cursor: pointer; border-radius: 20px; font-size: 0.9rem; font-family: Arial, sans-serif;
+    }
+    #pdfsearch-viewer-bar button:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.7); }
+    #pdfsearch-viewer-bar button:disabled { opacity: 0.35; }
+    #pdfsearch-panel-select {
+      font-weight: 600; font-size: 1.05rem; margin-bottom: 0.85rem;
+    }
+    #pdfsearch-panel-add .pdfsearch-status { margin-bottom: 0.35rem; }
+    #pdfsearch-add-box-name-wrap { margin-bottom: 0.75rem; }
+    #pdfsearch-add-box-name { margin-bottom: 0; }
+    .pdfsearch-add-files { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 0 0 0.35rem; }
+    #pdfsearch-upload-input {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;
+    }
+    #pdfsearch-app button:disabled { opacity: 0.4; cursor: not-allowed; }
+    #pdfsearch-viewer-frame { flex: 1; width: 100%; border: 0; background: #1a1a1a; }
+    #pdfsearch-viewer-pages {
+      display: none; flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; background: #1a1a1a;
+    }
+    #pdfsearch-viewer.is-paged #pdfsearch-viewer-frame { display: none; }
+    #pdfsearch-viewer.is-paged #pdfsearch-viewer-pages { display: block; }
+    #pdfsearch-viewer-scroll { min-height: 100%; display: flex; justify-content: center; padding: 8px; box-sizing: border-box; }
+    #pdfsearch-viewer-scroll canvas { max-width: 100%; height: auto; background: #fff; }
+
     @media (max-width: 600px) {
-      #sidenav { transform: translateX(-100%); }
+      #sidenav { transform: translateX(-100%); padding-top: 3.75rem; }
       #sidenav.open { transform: translateX(0); }
       #hamburger { display: block; }
       #nav-overlay.visible { display: block; }
       #main-content { margin-left: 0; padding: 1rem; padding-top: 3.5rem; }
       #audio-player { left: 0; }
+      #private-slideshow, #private-captions, #private-add-slideshow, #pdfsearch-viewer, #inline-video-player { inset: 0; }
+      .pdfsearch-card { padding: 1rem; }
+      .pdfsearch-mode-toggle { display: flex; flex-direction: column; width: 100%; }
+      #pdfsearch-search-box-list { grid-template-columns: 1fr; }
+      #pdfsearch-search-box-list label:nth-child(odd) { box-shadow: none; }
+      #pdfsearch-search-box-list label:nth-last-child(2):nth-child(odd) { border-bottom: 1px solid #e4e8ee; }
+      .pdfsearch-mode-toggle button {
+        width: 100%; white-space: normal; line-height: 1.25;
+        padding: 0.45rem 0.75rem !important; font-size: 0.82rem !important;
+        border-left: 1.5px solid #1e3a5f !important;
+      }
+      .pdfsearch-mode-toggle button + button { border-top: none !important; }
+      .pdfsearch-mode-toggle button:first-child { border-radius: 12px 12px 0 0 !important; }
+      .pdfsearch-mode-toggle button:last-child { border-radius: 0 0 12px 12px !important; }
+      #pdfsearch-app .pdfsearch-mode-toggle button:not(:first-child):not(:last-child) { border-radius: 0 !important; }
+      .tab-btn { padding: 0.28rem 0.55rem 0.4rem !important; font-size: 0.72rem !important; }
     }
   </style>
 </head>
@@ -103,20 +738,13 @@
   <nav id="sidenav">
     <div class="nav-title">DLIV <span>Family &amp; Friends</span></div>
     <div class="nav-section">
-      <div class="nav-section-label">Media</div>
       <div class="nav-item active" onclick="showPanel('slideshows', this)"><span class="icon">🎞</span> Slideshows</div>
-    </div>
-    <div class="nav-section">
-      <div class="nav-section-label">College Funds</div>
-      <a class="nav-sub-item" href="https://digital.fidelity.com/prgw/digital/familygifting/mlgLandingPage?uuid=af6a9494832f4c9aaab448d3a7c55a25" target="_blank" rel="noopener noreferrer">Scouty</a>
-      <a class="nav-sub-item" href="https://digital.fidelity.com/prgw/digital/familygifting/mlgLandingPage?uuid=05fba5286cd04e8c85f55e363245f948" target="_blank" rel="noopener noreferrer">Slate</a>
-    </div>
-    <div class="nav-section">
-      <div class="nav-section-label">Private</div>
       <div class="nav-item" onclick="showPanel('friends', this)"><span class="icon">🔒</span> Dropbox</div>
+      <div class="nav-item" data-nav="ancestry" hidden onclick="showPanel('pdfsearch', this)"><span class="icon">📜</span> <span data-pdf-search-label>PDF Search</span></div>
       <a class="nav-item" href="./calendar.html"><span class="icon">📅</span> Calendar</a>
     </div>
     <div class="nav-spacer"></div>
+    <div class="nav-out" id="nav-out" hidden></div>
     <div class="nav-bottom">&copy; 2020 DLIV</div>
   </nav>
 
@@ -124,13 +752,27 @@
 
     <!-- Slideshows panel -->
     <div id="panel-slideshows" class="panel active">
+      <div class="pdfsearch-card" id="slideshow-picker-card">
+        <h4 class="pdfsearch-card-title slideshow-picker-title">Slideshows</h4>
+        <div class="slideshow-picker-row">
+          <div class="slideshow-picker-col">
+            <label class="slideshow-picker-label" for="selectAlbum">Family</label>
+            <select id="selectAlbum" class="pdfsearch-select" aria-label="Family slideshows"></select>
+            <p id="familyAlbumStatus" class="slideshow-card-status"></p>
+          </div>
+          <div class="slideshow-picker-col" id="slideshow-picker-users" hidden>
+            <label class="slideshow-picker-label" for="selectSharedAlbum">Users</label>
+            <select id="selectSharedAlbum" class="pdfsearch-select" aria-label="User slideshows"></select>
+            <p id="sharedAlbumStatus" class="slideshow-card-status"></p>
+          </div>
+        </div>
+      </div>
       <div id="headerMessage"></div>
       <div id="slideshow-container">
-        <div id="show-selector">
-          <label id="selectLabel" for="selectAlbum">Slideshows</label>
-          <select id="selectAlbum"></select>
+        <div id="slideshow">
+          <img id="slide" alt="" decoding="async" hidden />
         </div>
-        <div id="slideshow"><img id="slide" alt="" decoding="async" hidden /></div>
+        <p id="slideCaption"></p>
         <div id="controls">
           <button id="prevBtn" title="Previous">⏮</button>
           <button id="playPauseBtn" title="Pause">⏸</button>
@@ -155,6 +797,11 @@
             <p id="private-error" class="auth-sign-error"></p>
           </div>
 
+          <div id="private-loading" class="apple-progress private-loading" role="status" aria-live="polite">
+            <p class="apple-progress-label">Loading Dropbox</p>
+            <div class="apple-progress-track"><div class="apple-progress-bar"></div></div>
+          </div>
+
           <div id="private-browser" style="display:none">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.15rem;">
               <h3 style="margin:0">Dropbox</h3>
@@ -162,13 +809,37 @@
             </div>
             <div id="private-breadcrumb"></div>
             <div class="tab-bar">
-              <button class="tab-btn active" id="tab-btn-shared" onclick="switchTab('shared')">DLIV Users</button>
-              <button class="tab-btn" id="tab-btn-mine" onclick="switchTab('mine')">MyStuff</button>
+              <button class="tab-btn active" id="tab-btn-shared" onclick="switchTab('shared')">All DLIV Users</button>
+              <button class="tab-btn" id="tab-btn-mine" onclick="switchTab('mine')">Mine</button>
+              <button class="tab-btn" id="tab-btn-video" onclick="switchTab('video')" hidden>Format Conversions</button>
+              <button class="tab-btn" id="tab-btn-slideshows" onclick="switchTab('slideshows')">Edit My Slideshow</button>
             </div>
-            <div class="tab-content-area">
+            <div id="private-slideshows-manage">
+              <p id="private-slideshows-status"></p>
+              <ul id="private-slideshows-list"></ul>
+            </div>
+            <div id="private-video-status">
               <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin:0 0 0.5rem;">
-                <button class="toolbar-btn" onclick="toggleUpload()">+ File</button>
-                <button class="toolbar-btn" onclick="handleCreateFolder()">+ Folder</button>
+                <button type="button" class="toolbar-btn" data-video-upload onclick="startVideoUpload()" hidden>Upload Video</button>
+                <button type="button" class="toolbar-btn" data-video-upload onclick="startDiscUpload()" hidden>Upload DVD</button>
+                <button type="button" class="toolbar-btn" data-video-upload onclick="startDiscUpload()" hidden>Upload Audio</button>
+              </div>
+              <p id="private-video-status-copy">Keep this <span class="video-status-tab-name">Format Conversions</span> tab open until the upload finishes — closing this tab or sleeping stops the transfer. Finished MP4s land in Mine → Videos. MP3s land in a dated folder under Mine → Music.</p>
+              <ul id="private-video-status-list"></ul>
+            </div>
+            <div id="private-files-pane" class="tab-content-area">
+              <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin:0 0 0.5rem;">
+                <button type="button" id="private-up-btn" class="toolbar-btn" onclick="navigateUp()" style="display:none">↑ Up</button>
+                <button type="button" class="toolbar-btn" id="private-file-upload-btn" onclick="toggleUpload()">+ File</button>
+                <div class="toolbar-menu" id="videos-add-menu" hidden>
+                  <button type="button" class="toolbar-btn" id="videos-add-btn" aria-haspopup="true" aria-expanded="false" onclick="toggleVideosAddMenu(event)">Add</button>
+                  <div class="toolbar-menu-list" id="videos-add-list" hidden></div>
+                </div>
+                <button type="button" class="toolbar-btn" id="video-combine-btn" data-video-edit onclick="toggleVideoCombine()" hidden>Cancel combine</button>
+                <button type="button" class="toolbar-btn" id="video-combine-go" onclick="openCombineDialog()" hidden>Combine selected</button>
+                <input type="file" id="video-upload-input" accept="video/*,audio/*,.mp4,.mov,.m4v,.mpeg,.mpg,.avi,.mkv,.wmv,.aiff,.aif,.wav,.flac,.m4a,.mp3" hidden />
+                <input type="file" id="disc-upload-input" webkitdirectory directory multiple hidden />
+                <button type="button" class="toolbar-btn" id="private-folder-btn" onclick="handleCreateFolder()">+ Folder</button>
                 <button class="toolbar-btn" onclick="toggleDownloadMode()" id="download-mode-btn">⬇ Download</button>
                 <button id="check-all-btn" onclick="checkAll()" style="display:none;">☑ Check All</button>
                 <button id="download-selected-btn" onclick="downloadSelected()" style="display:none;">⬇ Download Selected</button>
@@ -186,8 +857,122 @@
               </div>
               <ul id="private-file-list"></ul>
             </div>
+            <div id="private-op-progress" hidden role="status" aria-live="polite">
+              <div class="apple-progress">
+                <p class="apple-progress-label" id="private-op-progress-label">Working</p>
+                <div class="apple-progress-track"><div class="apple-progress-bar"></div></div>
+              </div>
+            </div>
           </div>
 
+        </div>
+      </div>
+    </div>
+
+    <!-- Ancestry / PDF search panel -->
+    <div id="panel-pdfsearch" class="panel">
+      <div id="pdfsearch-section">
+        <div id="pdfsearch-panel">
+          <div id="pdfsearch-login" class="auth-sign-block pdfsearch-card" style="display:none">
+            <h3>Sign In</h3>
+            <input type="email" id="pdfsearch-email" placeholder="Email" autocomplete="username" />
+            <div class="auth-password-row">
+              <input type="password" id="pdfsearch-password" placeholder="Password" autocomplete="current-password" />
+              <span class="auth-show-pwd" onclick="togglePwd('pdfsearch-password',this)">Show</span>
+            </div>
+            <button type="button" class="auth-signin-submit" onclick="handlePdfSearchSignIn()">Sign In</button>
+            <p id="pdfsearch-error" class="auth-sign-error"></p>
+          </div>
+          <div id="pdfsearch-loading" class="apple-progress private-loading pdfsearch-card" role="status" aria-live="polite">
+            <p class="apple-progress-label">Loading <span data-pdf-search-label>PDF Search</span></p>
+            <div class="apple-progress-track"><div class="apple-progress-bar"></div></div>
+          </div>
+          <div id="pdfsearch-app" style="display:none">
+            <div id="pdfsearch-app-head">
+              <h3 id="pdfsearch-title" style="margin:0"><span data-pdf-search-label>PDF Search</span></h3>
+              <button type="button" onclick="handlePdfSearchSignOut()">Sign Out</button>
+            </div>
+            <div class="pdfsearch-card" id="pdfsearch-main-card">
+              <select id="pdfsearch-panel-select" class="pdfsearch-select" aria-label="PDF Search" data-pdf-search-label>
+                <option value="search">Search Archives</option>
+                <option value="browse">Browse Archives</option>
+                <option value="add">Add PDFs</option>
+              </select>
+              <div id="pdfsearch-panel-search">
+                <form id="pdfsearch-form">
+                  <div class="pdfsearch-suggest-wrap">
+                    <input id="pdfsearch-q" type="search" placeholder="Search names, churches, places…" autocomplete="off" />
+                    <ul id="pdfsearch-suggest" hidden></ul>
+                  </div>
+                  <button type="submit">Search</button>
+                </form>
+                <div class="pdfsearch-mode-toggle" role="group" aria-label="Search in">
+                  <button type="button" id="pdfsearch-search-all" class="is-active">All boxes</button>
+                  <button type="button" id="pdfsearch-search-some">Selected boxes</button>
+                </div>
+                <div id="pdfsearch-search-box-list" hidden></div>
+                <div id="pdfsearch-status-row" class="pdfsearch-status-row">
+                  <div id="pdfsearch-search-status" class="pdfsearch-status"></div>
+                  <div id="pdfsearch-search-nav">
+                    <button type="button" id="pdfsearch-home" style="display:none">Clear to remove search results</button>
+                  </div>
+                </div>
+                <div id="pdfsearch-results"></div>
+              </div>
+              <div id="pdfsearch-panel-browse" hidden>
+                <div id="pdfsearch-browse-status-row" class="pdfsearch-status-row">
+                  <p id="pdfsearch-browse-status" class="pdfsearch-status"></p>
+                </div>
+                <div class="pdfsearch-mode-toggle" role="group" aria-label="Find a box">
+                  <button type="button" id="pdfsearch-mode-search" class="is-active">Find a box</button>
+                  <button type="button" id="pdfsearch-mode-all">Show all boxes</button>
+                  <button type="button" id="pdfsearch-mode-extracts">Show all extracts</button>
+                </div>
+                <div id="pdfsearch-box-search-wrap">
+                  <input id="pdfsearch-box-q" class="pdfsearch-select" type="search" placeholder="Find a box…" autocomplete="off" style="margin-bottom:0" />
+                  <ul id="pdfsearch-box-suggest" hidden></ul>
+                </div>
+                <ul id="pdfsearch-box-all" hidden></ul>
+                <div id="pdfsearch-extract-actions" hidden>
+                  <label>
+                    <input type="checkbox" id="pdfsearch-extract-select-all" aria-label="Select all extracts" />
+                    All
+                  </label>
+                  <span id="pdfsearch-extract-bulk">
+                    <button type="button" id="pdfsearch-extract-remove-selected" class="pdfsearch-remove" disabled>Remove</button>
+                  </span>
+                </div>
+                <ul id="pdfsearch-extract-all" hidden></ul>
+                <div id="pdfsearch-file-slot">
+                  <div id="pdfsearch-file-wrap" hidden>
+                    <label class="pdfsearch-status" for="pdfsearch-file-select" style="display:block; margin-bottom:0.3rem;">PDF</label>
+                    <select id="pdfsearch-file-select" class="pdfsearch-select" aria-label="PDF">
+                      <option value="">Select a PDF</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="pdfsearch-detail-slot">
+                  <div id="pdfsearch-browse-detail" hidden></div>
+                </div>
+              </div>
+              <div id="pdfsearch-panel-add" hidden>
+                <label class="pdfsearch-status" for="pdfsearch-add-box-select">Add to box</label>
+                <select id="pdfsearch-add-box-select" class="pdfsearch-select" aria-label="Add to box">
+                  <option value="__new__">New box</option>
+                </select>
+                <div id="pdfsearch-add-box-name-wrap">
+                  <label class="pdfsearch-status" for="pdfsearch-add-box-name">New box name</label>
+                  <input id="pdfsearch-add-box-name" class="pdfsearch-select" type="text" spellcheck="false" autocomplete="off" placeholder="BOX016" />
+                </div>
+                <label class="pdfsearch-status" for="pdfsearch-upload-btn">PDFs</label>
+                <div class="pdfsearch-add-files">
+                  <input id="pdfsearch-upload-input" type="file" accept="application/pdf,.pdf" multiple />
+                  <button type="button" id="pdfsearch-upload-btn">Choose PDFs</button>
+                </div>
+                <p id="pdfsearch-upload-status" class="pdfsearch-status"></p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -204,9 +989,154 @@
     <button onclick="playerStop()">■ Stop</button>
   </div>
 
+  <div id="video-edit-modal" hidden role="dialog" aria-modal="true" aria-labelledby="video-edit-title">
+    <div id="video-edit-box">
+      <h3 id="video-edit-title">Clip video</h3>
+      <p id="video-edit-note">The new MP4 is saved in this folder. The original stays where it is.</p>
+      <div id="video-edit-times">
+        <label>Start
+          <input id="video-edit-start" inputmode="numeric" placeholder="0:00" autocomplete="off" />
+        </label>
+        <label>End
+          <input id="video-edit-end" inputmode="numeric" placeholder="1:30" autocomplete="off" />
+        </label>
+      </div>
+      <ol id="video-edit-files" hidden></ol>
+      <label>New file name
+        <input id="video-edit-name" autocomplete="off" />
+      </label>
+      <p id="video-edit-error" role="alert"></p>
+      <div id="video-edit-actions">
+        <button type="button" id="video-edit-save" onclick="saveVideoEdit()">Create MP4</button>
+        <button type="button" id="video-edit-cancel" onclick="closeVideoEdit()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="inline-video-player" aria-modal="true" role="dialog" aria-label="Video player">
+    <video id="inline-video" controls playsinline></video>
+    <div id="inline-video-skip">
+      <button type="button" onclick="skipInlineVideo(-10)">−10 sec</button>
+      <button type="button" onclick="skipInlineVideo(-0.5)">−0.5 sec</button>
+      <button type="button" onclick="skipInlineVideo(0.5)">+0.5 sec</button>
+      <button type="button" onclick="skipInlineVideo(10)">+10 sec</button>
+    </div>
+    <div id="inline-video-controls">
+      <div id="inline-video-clip" hidden>
+        <button type="button" onclick="markInlineVideoClip('start')" title="I">Mark start</button>
+        <span id="inline-video-clip-start">—</span>
+        <button type="button" onclick="markInlineVideoClip('end')" title="O">Mark end</button>
+        <span id="inline-video-clip-end">—</span>
+        <button type="button" id="inline-video-clip-create" onclick="createInlineVideoClip()">Create clip</button>
+        <p id="inline-video-clip-error" role="alert"></p>
+      </div>
+      <span id="inline-video-name"></span>
+      <button type="button" onclick="closeInlineVideo()">■ Close</button>
+    </div>
+  </div>
+
+  <div id="private-slideshow" aria-modal="true" role="dialog" aria-label="Folder slideshow">
+    <img id="private-slide-img" alt="" decoding="async" />
+    <p id="private-slide-status"></p>
+    <div id="private-slideshow-controls">
+      <button type="button" onclick="privateSlidePrev()" title="Previous">⏮</button>
+      <button type="button" id="private-slide-play" onclick="togglePrivateSlidePlay()" title="Pause">⏸</button>
+      <span id="private-slide-count"></span>
+      <button type="button" onclick="privateSlideNext()" title="Next">⏭</button>
+      <button type="button" onclick="captionCurrentSlide()">+ Caption</button>
+      <button type="button" onclick="openAddToSlideshow()">+ Slideshow</button>
+      <button type="button" onclick="closePrivateSlideshow()">■ Close</button>
+    </div>
+  </div>
+
+  <div id="private-captions" aria-modal="true" role="dialog" aria-label="Photo captions">
+    <div class="private-captions-body">
+      <img id="private-caption-img" alt="" decoding="async" />
+      <div class="private-captions-editor">
+        <p id="private-caption-name"></p>
+        <textarea id="private-caption-text" rows="4" placeholder="Add a caption…"></textarea>
+        <div class="private-caption-save-row">
+          <button type="button" id="private-caption-save" onclick="savePrivateCaption()">Save</button>
+          <div id="private-caption-save-status"></div>
+        </div>
+      </div>
+    </div>
+    <div id="private-captions-controls">
+      <button type="button" onclick="privateCaptionPrev()" title="Previous">⏮</button>
+      <span id="private-caption-count"></span>
+      <button type="button" onclick="privateCaptionNext()" title="Next">⏭</button>
+      <button type="button" onclick="closePrivateCaptions()">■ Close</button>
+    </div>
+  </div>
+
+  <div id="private-add-slideshow" aria-modal="true" role="dialog" aria-label="+ Slideshow" onclick="if (event.target === this) closeAddToSlideshow()">
+    <div id="private-add-slideshow-box">
+      <img id="private-add-slideshow-thumb" alt="Photo to add" decoding="async" hidden />
+      <h3>+ Slideshow</h3>
+      <div class="private-add-slideshow-card">
+        <h4>Create new slideshow</h4>
+        <label for="private-add-slideshow-title" class="visually-hidden">Slideshow name</label>
+        <input id="private-add-slideshow-title" type="text" maxlength="80" placeholder="New Slideshow Name" onfocus="this.dataset.ph=this.placeholder;this.placeholder=''" onblur="this.placeholder=this.dataset.ph||'New Slideshow Name'" />
+        <button type="button" id="private-add-slideshow-create" onclick="createSlideshowWithCurrentPhoto()">Create and add photo</button>
+      </div>
+      <div class="private-add-slideshow-or">or</div>
+      <div class="private-add-slideshow-card">
+        <h4>Add to existing slideshow</h4>
+        <ul id="private-add-slideshow-list"></ul>
+        <button type="button" id="private-add-slideshow-add" onclick="addSelectedPhotoToExistingSlideshow()" disabled>Add photo</button>
+      </div>
+      <p id="private-add-slideshow-status"></p>
+      <button type="button" id="private-add-slideshow-close" onclick="closeAddToSlideshow()">Cancel</button>
+    </div>
+  </div>
+
+  <div id="pdfsearch-viewer" aria-modal="true" role="dialog" aria-label="Source PDF">
+    <div id="pdfsearch-viewer-bar">
+      <button type="button" id="pdfsearch-viewer-prev" style="display:none">Prev</button>
+      <span id="pdfsearch-viewer-title">Source PDF</span>
+      <span id="pdfsearch-viewer-status"></span>
+      <label id="pdfsearch-viewer-goto">Page
+        <input id="pdfsearch-viewer-page" type="number" min="1" value="1" inputmode="numeric" aria-label="Page number" />
+      </label>
+      <button type="button" id="pdfsearch-viewer-next" style="display:none">Next</button>
+      <button type="button" id="pdfsearch-viewer-extract" aria-expanded="false" aria-controls="pdfsearch-viewer-extract-overlay">Extract</button>
+      <button type="button" id="pdfsearch-viewer-close">Close</button>
+    </div>
+    <div id="pdfsearch-viewer-extract-overlay" hidden>
+      <div id="pdfsearch-viewer-extract-controls" role="group" aria-label="Extract pages">
+        <select id="pdfsearch-viewer-extract-mode" aria-label="What to extract">
+          <option value="pages">Pages</option>
+          <option value="all">Entire PDF</option>
+        </select>
+        <span id="pdfsearch-viewer-extract-range">
+          <input id="pdfsearch-viewer-extract-from" type="number" min="1" value="1" aria-label="From page" />
+          <span aria-hidden="true">–</span>
+          <input id="pdfsearch-viewer-extract-to" type="number" min="1" value="1" aria-label="To page" />
+        </span>
+        <button type="button" id="pdfsearch-viewer-print" hidden disabled>Clipboard</button>
+        <textarea id="pdfsearch-viewer-print-url" readonly hidden rows="1" aria-label="Print URL"></textarea>
+        <span id="pdfsearch-viewer-extract-note"></span>
+      </div>
+    </div>
+    <iframe id="pdfsearch-viewer-frame" title="Source PDF"></iframe>
+    <div id="pdfsearch-viewer-progress" class="apple-progress apple-progress--on-dark" hidden>
+      <p class="apple-progress-label">Loading PDF</p>
+      <div class="apple-progress-track"><div class="apple-progress-bar"></div></div>
+    </div>
+    <div id="pdfsearch-viewer-pages">
+      <div id="pdfsearch-viewer-scroll"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { applySiteChrome } from "./siteNav.js";
+    fetch("/dliv_outputs.json").then((r) => r.json()).then(applySiteChrome).catch(() => {});
+  </script>
   <script type="module" src="./privateFiles.js"></script>
+  <script type="module" src="./pdfSearch.js"></script>
   <script>
     let privateInitialized = false;
+    let pdfSearchInitialized = false;
 
     function navItemForPanel(panel) {
       return [...document.querySelectorAll('#sidenav .nav-item')].find(
@@ -216,23 +1146,52 @@
 
     function applyHashPanel() {
       const raw = (location.hash || '').replace(/^#/, '');
-      if (raw === 'friends' || raw === 'dropbox') {
+      const panel = raw.split('?')[0].split('/')[0];
+      if (panel === 'friends' || panel === 'dropbox') {
         showPanel('friends', navItemForPanel('friends'));
+        return;
+      }
+      if (panel === 'pdfsearch' || panel === 'ancestry') {
+        if (window.__ancestryEnabled === false) {
+          showPanel('slideshows', navItemForPanel('slideshows'));
+          if (location.hash) location.hash = 'slideshows';
+          return;
+        }
+        showPanel('pdfsearch', navItemForPanel('pdfsearch'));
         return;
       }
       showPanel('slideshows', navItemForPanel('slideshows'));
     }
 
     function showPanel(name, el) {
+      if ((name === 'pdfsearch' || name === 'ancestry') && window.__ancestryEnabled === false) {
+        name = 'slideshows';
+        el = navItemForPanel('slideshows');
+      }
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       document.getElementById('panel-' + name).classList.add('active');
       if (el) el.classList.add('active');
       document.getElementById('sidenav').classList.remove('open');
       document.getElementById('nav-overlay').classList.remove('visible');
+      if (name !== 'friends') {
+        if (typeof window.closePrivateSlideshow === 'function') window.closePrivateSlideshow();
+        if (typeof window.closePrivateCaptions === 'function') window.closePrivateCaptions();
+      }
+      if (name !== 'pdfsearch' && typeof window.closePdfSearchViewer === 'function') {
+        window.closePdfSearchViewer(false);
+      }
       if (name === 'friends' && !privateInitialized) {
         privateInitialized = true;
         window.initPrivate();
+      }
+      if (name === 'pdfsearch') {
+        if (!pdfSearchInitialized) {
+          pdfSearchInitialized = true;
+          window.initPdfSearch();
+        } else if (typeof window.syncPdfSearchViewer === 'function') {
+          window.syncPdfSearchViewer();
+        }
       }
     }
 

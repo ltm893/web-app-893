@@ -1,18 +1,33 @@
 // calendar.js — shared family calendar
-import { isSignedIn, signIn, signOut, authHeaders, getCalendarApiUrl } from "./auth.js";
+import {
+  ensureSignedIn, signIn, signOut, authFetch, isAuthError, getCalendarApiUrl, loadingHtml,
+  syncAncestryNav,
+} from "./auth.js";
 
 let currentYear, currentMonth;
 let _cachedEvents = [];
 
+function showCalLogin() {
+  document.getElementById("cal-login").style.display   = "block";
+  document.getElementById("cal-content").style.display = "none";
+}
+
+function showCalContent() {
+  document.getElementById("cal-login").style.display   = "none";
+  document.getElementById("cal-content").style.display = "block";
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 window.initCalendar = async function () {
-  if (isSignedIn()) {
+  await syncAncestryNav();
+  if (await ensureSignedIn()) {
     const now    = new Date();
     currentYear  = now.getFullYear();
     currentMonth = now.getMonth();
+    showCalContent();
     renderCalendar();
   } else {
-    // Login form shown by calendar.html boot script
+    showCalLogin();
   }
 };
 
@@ -23,8 +38,7 @@ window.handleCalSignIn = async function () {
   errEl.textContent = "";
   try {
     await signIn(email, password);
-    document.getElementById("cal-login").style.display    = "none";
-    document.getElementById("cal-content").style.display  = "block";
+    showCalContent();
     const now    = new Date();
     currentYear  = now.getFullYear();
     currentMonth = now.getMonth();
@@ -36,8 +50,7 @@ window.handleCalSignIn = async function () {
 
 window.handleCalSignOut = async function () {
   await signOut();
-  document.getElementById("cal-login").style.display   = "block";
-  document.getElementById("cal-content").style.display = "none";
+  showCalLogin();
 };
 
 // ── Navigation ────────────────────────────────────────────────────────────────
@@ -60,19 +73,19 @@ async function renderCalendar() {
 
   title.textContent = new Date(currentYear, currentMonth, 1)
     .toLocaleString("default", { month: "long", year: "numeric" });
-  grid.innerHTML = `<div class="cal-loading">Loading…</div>`;
+  grid.innerHTML = `<div class="cal-loading">${loadingHtml("Loading")}</div>`;
 
   const from    = isoDate(currentYear, currentMonth, 1);
   const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
   const to      = isoDate(currentYear, currentMonth, lastDay);
 
   try {
-    const apiUrl  = await getCalendarApiUrl();
-    const headers = await authHeaders();
-    const res = await fetch(`${apiUrl}calendar?from=${from}&to=${to}`, { headers });
+    const apiUrl = await getCalendarApiUrl();
+    const res = await authFetch(`${apiUrl}calendar?from=${from}&to=${to}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     _cachedEvents = await res.json();
   } catch (err) {
+    if (isAuthError(err)) { showCalLogin(); return; }
     grid.innerHTML = `<div class="cal-error">Could not load events: ${err.message}</div>`;
     return;
   }
@@ -149,28 +162,40 @@ window.saveCalEvent = async function () {
   };
   if (!body.title) { alert("Title is required."); return; }
   try {
-    const apiUrl  = await getCalendarApiUrl();
-    const headers = { ...(await authHeaders()), "Content-Type": "application/json" };
+    const apiUrl = await getCalendarApiUrl();
     const res = eventId
-      ? await fetch(`${apiUrl}calendar/${eventId}`, { method: "PUT",  headers, body: JSON.stringify(body) })
-      : await fetch(`${apiUrl}calendar`,            { method: "POST", headers, body: JSON.stringify(body) });
+      ? await authFetch(`${apiUrl}calendar/${eventId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+      : await authFetch(`${apiUrl}calendar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     closeCalModal();
     renderCalendar();
-  } catch (err) { alert("Could not save event: " + err.message); }
+  } catch (err) {
+    if (isAuthError(err)) { closeCalModal(); showCalLogin(); return; }
+    alert("Could not save event: " + err.message);
+  }
 };
 
 window.deleteCalEvent = async function () {
   const eventId = document.getElementById("cal-form-id").value;
   if (!eventId || !confirm("Delete this event?")) return;
   try {
-    const apiUrl  = await getCalendarApiUrl();
-    const headers = await authHeaders();
-    const res = await fetch(`${apiUrl}calendar/${eventId}`, { method: "DELETE", headers });
+    const apiUrl = await getCalendarApiUrl();
+    const res = await authFetch(`${apiUrl}calendar/${eventId}`, { method: "DELETE" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     closeCalModal();
     renderCalendar();
-  } catch (err) { alert("Could not delete event: " + err.message); }
+  } catch (err) {
+    if (isAuthError(err)) { closeCalModal(); showCalLogin(); return; }
+    alert("Could not delete event: " + err.message);
+  }
 };
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -183,3 +208,5 @@ function escHtml(str) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
   );
 }
+
+syncAncestryNav();
