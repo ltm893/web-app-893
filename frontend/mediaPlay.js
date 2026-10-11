@@ -1,4 +1,13 @@
-export const APP_TAB_TITLE = "DLIV";
+let appTabTitle = "DLIV";
+
+export function appTabTitleText() {
+  return appTabTitle;
+}
+
+export function setAppTabTitle(title) {
+  const next = String(title ?? "").trim();
+  if (next) appTabTitle = next;
+}
 
 const AUDIO_EXTS = new Set(["mp3"]);
 const VIDEO_EXTS = new Set(["mp4", "m4v", "mov", "webm"]);
@@ -57,5 +66,5 @@ export function formatFileSize(bytes) {
 
 export function keepAppTabTitle() {
   if (typeof document === "undefined") return;
-  if (document.title !== APP_TAB_TITLE) document.title = APP_TAB_TITLE;
+  if (document.title !== appTabTitle) document.title = appTabTitle;
 }

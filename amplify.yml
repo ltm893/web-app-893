@@ -64,6 +64,7 @@ frontend:
               tagline: (process.env.SITE_TAGLINE || "").trim(),
               footer: (process.env.SITE_FOOTER || "").trim(),
               pdfSearchLabel: (process.env.SITE_PDF_SEARCH_LABEL || "").trim(),
+              sharedLabel: (process.env.SITE_SHARED_LABEL || "").trim(),
               links: siteLinks(process.env.SITE_LINKS),
             },
           };

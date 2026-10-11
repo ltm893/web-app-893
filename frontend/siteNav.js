@@ -1,3 +1,5 @@
+import { setAppTabTitle } from "./mediaPlay.js";
+
 // Optional per-deployment nav chrome from dliv_outputs.json → site.
 // Missing or empty links leave #nav-out hidden.
 
@@ -18,11 +20,17 @@ export function pdfSearchDisplayLabel(config) {
   return String(config?.site?.pdfSearchLabel ?? "").trim() || "PDF Search";
 }
 
+export function sharedDisplayLabel(config) {
+  return String(config?.site?.sharedLabel ?? "").trim() || "All users";
+}
+
 export function applySiteChrome(config, doc = document) {
   const site = config?.site ?? {};
+  applyDocumentTitle(site, doc);
   const titleEl = doc.querySelector(".nav-title");
   if (titleEl) applyTitle(titleEl, site, doc);
   applyPdfSearchLabel(pdfSearchDisplayLabel(config), doc);
+  applyTextLabel("[data-shared-label]", sharedDisplayLabel(config), doc);
 
   const footer = String(site.footer ?? "").trim();
   const footerEl = doc.querySelector(".nav-bottom");
@@ -47,6 +55,21 @@ export function applySiteChrome(config, doc = document) {
     slot.append(a);
   }
   return links;
+}
+
+function applyDocumentTitle(site, doc) {
+  const title = String(site?.title ?? "").trim();
+  if (!title || !doc) return;
+  setAppTabTitle(title);
+  const onCalendar = typeof doc.getElementById === "function" && doc.getElementById("cal-grid");
+  doc.title = onCalendar ? `${title} — Calendar` : title;
+}
+
+function applyTextLabel(selector, label, doc) {
+  if (typeof doc.querySelectorAll !== "function") return;
+  doc.querySelectorAll(selector).forEach((el) => {
+    el.textContent = label;
+  });
 }
 
 function applyPdfSearchLabel(label, doc) {

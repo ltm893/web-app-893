@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { applySiteChrome, pdfSearchDisplayLabel, siteLinks } from "../frontend/siteNav.js";
+import { applySiteChrome, pdfSearchDisplayLabel, sharedDisplayLabel, siteLinks } from "../frontend/siteNav.js";
 
 const SCOUTY = "https://digital.fidelity.com/scouty";
 const SLATE = "https://digital.fidelity.com/slate";
@@ -39,7 +39,7 @@ function stubDoc() {
   slot.hidden = true;
   const created = [];
   return {
-    title,
+    navTitle: title,
     footer,
     slot,
     created,
@@ -49,8 +49,11 @@ function stubDoc() {
       if (sel === ".nav-bottom") return footer;
       return null;
     },
+    shared: [],
     querySelectorAll(sel) {
-      return sel === "[data-pdf-search-label]" ? this.labels : [];
+      if (sel === "[data-pdf-search-label]") return this.labels;
+      if (sel === "[data-shared-label]") return this.shared;
+      return [];
     },
     getElementById(id) {
       return id === "nav-out" ? slot : null;
@@ -103,6 +106,21 @@ test("pdf search label stays PDF Search unless the deployment renames it", () =>
   assert.equal(label.textContent, "Ancestry");
 });
 
+test("site title sets the tab and shared label defaults to All users", () => {
+  assert.equal(sharedDisplayLabel({}), "All users");
+  assert.equal(sharedDisplayLabel({ site: { sharedLabel: "  Everyone  " } }), "Everyone");
+  const doc = stubDoc();
+  const shared = node();
+  doc.shared.push(shared);
+  applySiteChrome({ site: { title: "Acme", sharedLabel: "Everyone", links: [] } }, doc);
+  assert.equal(doc.title, "Acme");
+  assert.equal(shared.textContent, "Everyone");
+  const calendar = stubDoc();
+  calendar.getElementById = (id) => (id === "cal-grid" ? {} : calendar.slot);
+  applySiteChrome({ site: { title: "Acme" } }, calendar);
+  assert.equal(calendar.title, "Acme — Calendar");
+});
+
 test("applySiteChrome hides the slot when there are no links", () => {
   const doc = stubDoc();
   applySiteChrome({ site: { links: [] } }, doc);
@@ -128,7 +146,8 @@ test("applySiteChrome fills the slot and optional title", () => {
   assert.equal(link.target, "_blank");
   assert.equal(link.rel, "noopener noreferrer");
   assert.equal(link.textContent, "Scouty");
-  assert.equal(doc.title.textContent, "DLIV");
-  assert.equal(doc.title.querySelector("span").textContent, "Family & Friends");
+  assert.equal(doc.navTitle.textContent, "DLIV");
+  assert.equal(doc.navTitle.querySelector("span").textContent, "Family & Friends");
+  assert.equal(doc.title, "DLIV");
   assert.equal(doc.footer.textContent, "© 2026 DLIV");
 });

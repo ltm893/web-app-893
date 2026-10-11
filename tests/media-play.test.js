@@ -1,10 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  APP_TAB_TITLE,
+  appTabTitleText,
   isPlayableAudioKey,
   isPlayableVideoKey,
   keepAppTabTitle,
+  setAppTabTitle,
   skipMediaTime,
   VIDEO_NUDGE_SECONDS,
   VIDEO_SKIP_SECONDS,
@@ -22,11 +23,13 @@ test("mp3 and mp4 play on the DLIV page instead of opening S3", () => {
   assert.equal(isPlayableAudioKey("notes.pdf"), false);
 });
 
-test("keepAppTabTitle stays DLIV", () => {
-  assert.equal(APP_TAB_TITLE, "DLIV");
-  globalThis.document = { title: "dliv-private-files.s3.us-east-1.amazonaws.com" };
+test("keepAppTabTitle restores the configured site title", () => {
+  setAppTabTitle("Acme");
+  assert.equal(appTabTitleText(), "Acme");
+  globalThis.document = { title: "files.s3.us-east-1.amazonaws.com" };
   keepAppTabTitle();
-  assert.equal(globalThis.document.title, "DLIV");
+  assert.equal(globalThis.document.title, "Acme");
+  setAppTabTitle("DLIV");
   delete globalThis.document;
 });
 
