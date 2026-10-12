@@ -24,12 +24,12 @@ This repo is the website template. The live fork is `dliv-web`. Sign-in uses the
 | `dropbox-893` | `DROPBOX_API_URL` |
 | `calendar-893` | `CALENDAR_API_URL` |
 | `pdf-search-893` | `PDF_SEARCH_API_URL` (hidden when blank). OCR search and multipart S3 intake |
-| `video-convert-893` | `VIDEO_CONVERT_API_URL` (hidden when blank). DVD ingest, clip, and combine |
+| `video-convert-893` | `VIDEO_CONVERT_API_URL` (hidden when blank). Needs `dropbox-893`. Finished MP4s open from the Dropbox file list |
 
 ## Prerequisites
 
 1. Deploy `cognito-s3-stack-893`, then `dropbox-893` and `calendar-893`.
-2. Optionally deploy `pdf-search-893` and `video-convert-893`. Leave their API URL env vars blank to hide those tools.
+2. Optionally deploy `pdf-search-893`. Deploy `video-convert-893` only after `dropbox-893`. Leave an API URL blank to hide that tool.
 3. Create an Amplify Hosting app pointed at this repo (or your fork).
 4. Set environment variables on the Amplify branch (below).
 5. Push. `amplify.yml` writes `frontend/dliv_outputs.json` at build time.

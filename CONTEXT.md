@@ -15,7 +15,7 @@ Full map: [cognito-s3-stack-893](https://github.com/ltm893/cognito-s3-stack-893#
 
 ### For forkers
 1. Fork this repo and rename it to `your-domain-web` or similar
-2. Deploy `cognito-s3-stack-893`, then `dropbox-893` and `calendar-893`. `pdf-search-893` and `video-convert-893` are optional.
+2. Deploy `cognito-s3-stack-893`, then `dropbox-893` and `calendar-893`. `pdf-search-893` is optional. `video-convert-893` needs `dropbox-893` so users can open the finished MP4.
 3. Create a new Amplify Hosting app connected to your fork
 4. Set environment variables in the Amplify console (see below). The region variable is `APP_REGION`. Leave `PDF_SEARCH_API_URL` and `VIDEO_CONVERT_API_URL` blank to hide those tools.
 5. Deploy — `amplify.yml` generates `dliv_outputs.json` from env vars at build time
@@ -38,7 +38,7 @@ No real values ever committed to the repo.
 | `CALENDAR_API_URL` | calendar-893 API URL. Set this when the site uses the calendar. | `https://xxx.execute-api...` |
 | `SLIDESHOW_API_URL` | Slideshow API URL. Blank uses `DROPBOX_API_URL`. | `https://xxx.execute-api...` |
 | `PDF_SEARCH_API_URL` | Optional pdf-search-893 API URL. Blank hides PDF search. | `https://xxx.execute-api...` |
-| `VIDEO_CONVERT_API_URL` | Optional video-convert-893 API URL. Blank hides the video tools. | `https://xxx.execute-api...` |
+| `VIDEO_CONVERT_API_URL` | Optional video-convert-893 API URL. Blank hides the video tools. Deploy Dropbox first. | `https://xxx.execute-api...` |
 | `SITE_TITLE` | Site name for the sidebar and browser tab. | |
 | `SITE_TAGLINE` | Line under the nav title. | |
 | `SITE_FOOTER` | Line at the bottom of the nav. | |
