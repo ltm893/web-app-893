@@ -101,7 +101,12 @@ test("Music and Photos use the Add menu and a hover file menu like Videos", () =
   assert.equal(showLibraryAddMenu("mine", music, sub, true), true);
   assert.equal(showLibraryAddMenu("mine", photos, sub, false), true);
   assert.equal(showLibraryAddMenu("shared", "Photos/Family/", sub, true), true);
-  assert.equal(showLibraryAddMenu("mine", videos, sub, false), false);
+  assert.equal(showLibraryAddMenu("mine", videos, sub, false), true);
+  assert.deepEqual(libraryAddMenuItems("mine", videos, sub, false).map((item) => item.label), ["Folder"]);
+  assert.deepEqual(libraryAddMenuItems("shared", "", sub, true).map((item) => item.label), ["File", "Folder"]);
+  assert.deepEqual(libraryAddMenuItems("mine", mineRootPrefix(sub), sub, true).map((item) => item.label), ["Folder"]);
+  assert.equal(showStandaloneFolderButton("shared", "", sub, true), false);
+  assert.equal(showStandaloneFolderButton("mine", mineRootPrefix(sub), sub, true), false);
   assert.deepEqual(libraryAddMenuItems("mine", music, sub, true).map((item) => item.label), ["Audio file", "Folder"]);
   assert.deepEqual(libraryAddMenuItems("mine", photos, sub, true).map((item) => item.label), ["Photo file", "Folder"]);
   assert.deepEqual(libraryAddMenuItems("mine", videos, sub, true).map((item) => item.label), [

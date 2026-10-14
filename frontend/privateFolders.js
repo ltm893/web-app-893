@@ -72,16 +72,9 @@ export function showVideosAddMenu(tab, prefix, userId, videoConvertOn) {
   return listingLibrary(tab, prefix, userId) === "Videos" && tab === "mine" && !!videoConvertOn;
 }
 
-export function showLibraryAddMenu(tab, prefix, userId, videoConvertOn) {
-  const library = listingLibrary(tab, prefix, userId);
-  if (library === "Videos") return showVideosAddMenu(tab, prefix, userId, videoConvertOn);
-  return library === "Music" || library === "Photos";
-}
-
 export function libraryAddMenuItems(tab, prefix, userId, videoConvertOn) {
-  if (!showLibraryAddMenu(tab, prefix, userId, videoConvertOn)) return [];
   const library = listingLibrary(tab, prefix, userId);
-  if (library === "Videos") {
+  if (library === "Videos" && showVideosAddMenu(tab, prefix, userId, videoConvertOn)) {
     return [
       { label: "Video file", action: "video" },
       { label: "DVD files", action: "disc" },
@@ -101,7 +94,14 @@ export function libraryAddMenuItems(tab, prefix, userId, videoConvertOn) {
       { label: "Folder", action: "folder" },
     ];
   }
-  return [];
+  const items = [];
+  if (showFileUploadButton(tab, prefix, userId)) items.push({ label: "File", action: "file" });
+  items.push({ label: "Folder", action: "folder" });
+  return items;
+}
+
+export function showLibraryAddMenu(tab, prefix, userId, videoConvertOn) {
+  return libraryAddMenuItems(tab, prefix, userId, videoConvertOn).length > 0;
 }
 
 export function showVideosFileMenu(tab, prefix, userId) {
