@@ -1,6 +1,6 @@
 # CONTEXT.md — web-app-893
-# Read this first at the start of every session.
-# Last updated: 2026-05-05
+# Maintainer notes. Setup is in README.md.
+# Last updated: 2026-10-11
 
 ## What this repo is
 Generic, cloneable web frontend add-on for cognito-s3-stack-893.
@@ -9,22 +9,15 @@ Served via Amplify Hosting (static files only).
 No pipeline-deploy. No CDK. No Amplify SDK.
 
 ## Repo family
-| Repo | Status | Description |
-|------|--------|-------------|
-| `cognito-s3-stack-893` | ✅ | Base: Cognito + S3 — fork this first |
-| `dropbox-893` | ✅ | Private file manager |
-| `calendar-893` | ✅ | Calendar CRUD |
-| `music-player-893` | ✅ | iOS music player |
-| `web-app-893` | 🔜 Deploy | Web frontend — this repo |
-| `mileage-expense-tracker-893` | ✅ | MET iOS app |
+Full map: [cognito-s3-stack-893](https://github.com/ltm893/cognito-s3-stack-893#repo-family). This repo is the website template. The live fork is `dliv-web`. Neighbors are in [README.md](README.md#repo-family).
 
 ## How to use this repo
 
 ### For forkers
 1. Fork this repo and rename it to `your-domain-web` or similar
-2. Deploy `cognito-s3-stack-893`, `dropbox-893`, `calendar-893` first
+2. Deploy `cognito-s3-stack-893`, then `dropbox-893` and `calendar-893`. `pdf-search-893` is optional. `video-convert-893` needs `dropbox-893` so users can open the finished MP4.
 3. Create a new Amplify Hosting app connected to your fork
-4. Set environment variables in Amplify console (see below)
+4. Set environment variables in the Amplify console (see below). The region variable is `APP_REGION`. Leave `PDF_SEARCH_API_URL` and `VIDEO_CONVERT_API_URL` blank to hide those tools.
 5. Deploy — `amplify.yml` generates `dliv_outputs.json` from env vars at build time
 6. Your real AWS resource IDs never touch the repo
 
@@ -38,17 +31,25 @@ No real values ever committed to the repo.
 ## Environment variables (set in Amplify console)
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `AWS_REGION` | AWS region | `us-east-1` |
-| `USER_POOL_ID` | Cognito User Pool ID | `us-east-1_XXXXXXXXX` |
-| `USER_POOL_CLIENT_ID` | Cognito App Client ID | `xxxxxxxxxxxxxxxxxx` |
-| `DROPBOX_API_URL` | dropbox-893 API URL | `https://xxx.execute-api...` |
-| `CALENDAR_API_URL` | calendar-893 API URL | `https://xxx.execute-api...` |
-| `SLIDESHOW_API_URL` | slideshow API URL (usually same as dropbox) | `https://xxx.execute-api...` |
+| `APP_REGION` | `aws_region` from `dropbox_outputs.json`. Written to `aws_region`. Sign-in calls `cognito-idp.${aws_region}`. | `us-east-1` |
+| `USER_POOL_ID` | `auth.user_pool_id` from `dropbox_outputs.json` | `us-east-1_XXXXXXXXX` |
+| `USER_POOL_CLIENT_ID` | `auth.user_pool_client_id` from `dropbox_outputs.json`. Not the client id in `base_outputs.json`. | `xxxxxxxxxxxxxxxxxx` |
+| `DROPBOX_API_URL` | `api.base_url` from `dropbox_outputs.json` | `https://xxx.execute-api...` |
+| `CALENDAR_API_URL` | calendar-893 API URL. Set this when the site uses the calendar. | `https://xxx.execute-api...` |
+| `SLIDESHOW_API_URL` | Slideshow API URL. Blank uses `DROPBOX_API_URL`. | `https://xxx.execute-api...` |
+| `PDF_SEARCH_API_URL` | Optional pdf-search-893 API URL. Blank hides PDF search. | `https://xxx.execute-api...` |
+| `VIDEO_CONVERT_API_URL` | Optional video-convert-893 API URL. Blank hides the video tools. Deploy Dropbox first. | `https://xxx.execute-api...` |
+| `SITE_TITLE` | Site name for the sidebar and browser tab. | |
+| `SITE_TAGLINE` | Line under the nav title. | |
+| `SITE_FOOTER` | Line at the bottom of the nav. | |
+| `SITE_PDF_SEARCH_LABEL` | Renames the PDF search nav item. Blank keeps PDF Search. | |
+| `SITE_SHARED_LABEL` | Dropbox shared-tab label. Blank shows All users. | |
+| `SITE_LINKS` | Optional JSON array of `{label, href}` nav links. Blank hides them. `href` must be `http:` or `https:`. | `[]` |
 
 ## Architecture
 - NO pipeline-deploy — ever
 - NO Amplify SDK — auth.js uses raw Cognito SRP (USER_PASSWORD_AUTH)
-- Tokens stored in sessionStorage — cleared on tab close
+- Tokens stored in localStorage — they survive a browser restart
 - Config read from dliv_outputs.json at runtime (fetch on page load)
 - dliv_outputs.json generated at build time from env vars — never committed
 
@@ -77,7 +78,17 @@ No real values ever committed to the repo.
   },
   "dropbox":   { "api_url": "..." },
   "calendar":  { "api_url": "..." },
-  "slideshow": { "api_url": "..." }
+  "slideshow": { "api_url": "..." },
+  "pdfSearch": { "api_url": "..." },
+  "videoConvert": { "api_url": "..." },
+  "site": {
+    "title": "",
+    "tagline": "",
+    "footer": "",
+    "pdfSearchLabel": "",
+    "sharedLabel": "",
+    "links": [{ "label": "...", "href": "https://..." }]
+  }
 }
 ```
 
@@ -99,12 +110,9 @@ web-app-893/
 └── .gitignore
 ```
 
-## Next steps
-1. Update amplify.yml to generate dliv_outputs.json from env vars ← do this next
-2. Add dliv_outputs.json to .gitignore
-3. Add dliv_outputs.example.json
-4. Create GitHub repo web-app-893
-5. Fork as dliv-web (your personal deployment)
-6. Set env vars in Amplify console for dliv-web
-7. Deploy and test slideshow, dropbox, calendar
-8. Decommission old dliv.com Amplify app (d2d2tlr1n7ln0t)
+## Status
+`amplify.yml` already writes `frontend/dliv_outputs.json` from the Amplify branch env vars. That file is gitignored. `dliv_outputs.example.json` is the committed schema.
+
+Fork this repo for a new domain. `dliv-web` is the dliv.com deployment of this template, not the repo to fork.
+
+PDF search and video convert stay off when `PDF_SEARCH_API_URL` and `VIDEO_CONVERT_API_URL` are blank.

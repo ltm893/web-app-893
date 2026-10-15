@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>DLIV — Calendar</title>
+  <title>Calendar</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="slideshow.css" />
   <style>
@@ -16,26 +16,22 @@
     }
     .nav-title { color: white; font-size: 1.4rem; font-weight: 700; letter-spacing: 0.08em; padding: 0 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
     .nav-title span { color: rgba(255,255,255,0.4); font-size: 0.7rem; font-weight: 400; display: block; margin-top: 0.1rem; }
-    .nav-section { margin-top: 1.4rem; }
-    .nav-section-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.80); padding: 0 0 0.4rem 1.25rem; margin: 0 1.25rem 0.35rem 0; border-bottom: 1px solid rgba(255,255,255,0.18); }
+    .nav-section { margin-top: 0.75rem; }
     .nav-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 1.25rem; color: rgba(255,255,255,0.75); text-decoration: none; font-size: 0.9rem; cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent; }
+    .nav-item[hidden] { display: none !important; }
     .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
     .nav-item.active { background: rgba(255,255,255,0.12); color: white; border-left-color: white; font-weight: 600; }
     .nav-item .icon { font-size: 1rem; width: 1.2rem; text-align: center; }
-    .nav-sub-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 1.25rem 0.4rem 2.9rem; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.83rem; cursor: pointer; transition: all 0.15s; }
-    .nav-sub-item:hover { color: white; background: rgba(255,255,255,0.06); }
-    .nav-sub-item::before { content: "↗"; font-size: 0.7rem; opacity: 0.5; margin-right: 0.2rem; }
+    .nav-out { padding: 0.35rem 0 0.15rem; border-top: 1px solid rgba(255,255,255,0.1); }
+    #nav-out[hidden] { display: none !important; }
+    .nav-sub-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.32rem 1.25rem; color: rgba(255,255,255,0.42); text-decoration: none; font-size: 0.8rem; cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent; }
+    .nav-sub-item:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.06); }
+    .nav-sub-item::before { content: "↗"; font-size: 0.7rem; opacity: 0.55; }
     .nav-spacer { flex: 1; }
-    .nav-bottom { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.75rem; color: rgba(255,255,255,0.3); }
+    .nav-bottom { padding: 0.35rem 1.25rem 1rem; font-size: 0.75rem; color: rgba(255,255,255,0.3); }
     #hamburger { display: none; position: fixed; top: 0.75rem; left: 0.75rem; z-index: 200; background: #1e3a5f; color: white; border: none; border-radius: 8px; padding: 0.4rem 0.7rem; font-size: 1.2rem; cursor: pointer; }
     #nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 99; }
     #main-content { margin-left: 220px; flex: 1; padding: 1.5rem; }
-
-    #cal-login { max-width: 340px; }
-    #cal-login input { display: block; width: 100%; margin: 0.4rem 0; padding: 0.5rem 0.75rem; box-sizing: border-box; border: 1.5px solid #dde3ec; border-radius: 20px; font-size: 0.9rem; outline: none; transition: border-color 0.15s; }
-    #cal-login input:focus { border-color: #1e3a5f; }
-    #cal-login button { font-size: 0.9rem; padding: 0.45rem 1.1rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; margin-top: 0.4rem; border: 1.5px solid #1e3a5f; background: #1e3a5f; color: white; }
-    #cal-login-error { color: #e11d48; font-size: 0.85rem; margin-top: 0.3rem; }
 
     #cal-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
     #cal-month-title { font-size: 1.2rem; font-weight: 700; color: #1e3a5f; flex: 1; }
@@ -59,7 +55,7 @@
     .cal-event { font-size: 0.7rem; background: #1e3a5f; color: white; border-radius: 3px; padding: 0.1rem 0.3rem; margin-bottom: 2px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background 0.15s; }
     .cal-event:hover { background: #16304f; }
     .cal-event-time { opacity: 0.75; }
-    .cal-loading, .cal-error { grid-column: 1/-1; padding: 2rem; text-align: center; color: #94a3b8; font-size: 0.9rem; }
+    .cal-loading, .cal-error { grid-column: 1/-1; padding: 2rem 1rem; text-align: center; color: #94a3b8; font-size: 0.9rem; background: #fff; }
     .cal-error { color: #e11d48; }
 
     #cal-modal { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; }
@@ -79,7 +75,7 @@
     #cal-modal-createdby { font-size: 0.75rem; color: #94a3b8; margin-top: 0.75rem; }
 
     @media (max-width: 600px) {
-      #sidenav { transform: translateX(-100%); }
+      #sidenav { transform: translateX(-100%); padding-top: 3.75rem; }
       #sidenav.open { transform: translateX(0); }
       #hamburger { display: block; }
       #nav-overlay.visible { display: block; }
@@ -97,33 +93,32 @@
   <nav id="sidenav">
     <div class="nav-title">DLIV <span>Family &amp; Friends</span></div>
     <div class="nav-section">
-      <div class="nav-section-label">Media</div>
-      <a class="nav-item" href="/index.html"><span class="icon">🎞</span> Slideshows</a>
-    </div>
-    <div class="nav-section">
-      <div class="nav-section-label">College Funds</div>
-      <a class="nav-sub-item" href="https://digital.fidelity.com/prgw/digital/familygifting/mlgLandingPage?uuid=af6a9494832f4c9aaab448d3a7c55a25" target="_blank" rel="noopener noreferrer">Scouty</a>
-      <a class="nav-sub-item" href="https://digital.fidelity.com/prgw/digital/familygifting/mlgLandingPage?uuid=05fba5286cd04e8c85f55e363245f948" target="_blank" rel="noopener noreferrer">Slate</a>
-    </div>
-    <div class="nav-section">
-      <div class="nav-section-label">Private</div>
-      <a class="nav-item" href="/index.html"><span class="icon">🔒</span> Dropbox</a>
+      <a class="nav-item" href="/index.html#slideshows"><span class="icon">🎞</span> Slideshows</a>
+      <a class="nav-item" href="/index.html#friends"><span class="icon">🔒</span> Dropbox</a>
+      <a class="nav-item" data-nav="ancestry" hidden href="/index.html#ancestry"><span class="icon">📜</span> <span data-pdf-search-label>PDF Search</span></a>
       <div class="nav-item active"><span class="icon">📅</span> Calendar</div>
     </div>
     <div class="nav-spacer"></div>
+    <div class="nav-out" id="nav-out" hidden></div>
     <div class="nav-bottom">&copy; 2020 DLIV</div>
   </nav>
 
   <main id="main-content">
-    <div id="cal-login" style="display:none">
+    <div class="auth-sign-shell">
+    <div id="cal-login" class="auth-sign-card auth-sign-block" style="display:none">
       <h3>Sign In</h3>
-      <input type="email" id="cal-email" placeholder="Email" />
-      <div style="position:relative;">
-        <input type="password" id="cal-password" placeholder="Password" style="padding-right:2.5rem;" />
-        <span onclick="togglePwd('cal-password',this)" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:0.85rem;color:#94a3b8;user-select:none;">Show</span>
+      <input type="email" id="cal-email" placeholder="Email" autocomplete="username" />
+      <div class="auth-password-row">
+        <input type="password" id="cal-password" placeholder="Password" autocomplete="current-password" />
+        <span class="auth-show-pwd" onclick="togglePwd('cal-password',this)">Show</span>
       </div>
-      <button onclick="handleCalSignIn()">Sign In</button>
-      <p id="cal-login-error"></p>
+      <div class="auth-password-row" id="cal-new-password-row" hidden>
+        <input type="password" id="cal-new-password" placeholder="New password" autocomplete="new-password" />
+        <span class="auth-show-pwd" onclick="togglePwd('cal-new-password',this)">Show</span>
+      </div>
+      <button type="button" class="auth-signin-submit" onclick="handleCalSignIn()">Sign In</button>
+      <p id="cal-login-error" class="auth-sign-error"></p>
+    </div>
     </div>
 
     <div id="cal-content" style="display:none">
@@ -158,28 +153,14 @@
     </div>
   </div>
 
+  <script type="module">
+    import { applySiteChrome } from "./siteNav.js";
+    fetch("/dliv_outputs.json").then((r) => r.json()).then(applySiteChrome).catch(() => {});
+  </script>
   <script type="module" src="./calendar.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      import("./calendar.js").then(() => {
-        window.initCalendar();
-        const { isSignedIn } = window._authModule ?? {};
-        // auth state handled by calendar.js initCalendar
-      });
-    });
-
-    document.addEventListener("DOMContentLoaded", () => {
-      // Show login or calendar based on stored token
-      import("./auth.js").then(({ isSignedIn }) => {
-        if (isSignedIn()) {
-          document.getElementById("cal-login").style.display   = "none";
-          document.getElementById("cal-content").style.display = "block";
-          window.initCalendar();
-        } else {
-          document.getElementById("cal-login").style.display   = "block";
-          document.getElementById("cal-content").style.display = "none";
-        }
-      });
+      import("./calendar.js").then(() => window.initCalendar());
     });
 
     document.getElementById("cal-modal").addEventListener("click", (e) => {
