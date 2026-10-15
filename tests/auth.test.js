@@ -8,6 +8,7 @@ import {
   isVideoConvertEnabled,
   getVideoConvertApiUrl,
   resetAuthForTests,
+  isNewPasswordRequired,
   signIn,
   syncAncestryNav,
 } from "../frontend/auth.js";
@@ -206,6 +207,51 @@ test("sign-in stores the refresh token", async () => {
   assert.equal(localStorage.getItem("id_token"), "id-login");
   assert.equal(localStorage.getItem("refresh_token"), "refresh-login");
   assert.equal(await ensureSignedIn(), true);
+});
+
+test("an invite that still needs a password asks for one before storing tokens", async () => {
+  fetchImpl = async (url, options) => {
+    if (String(url).includes("dliv_outputs.json")) return jsonResponse(CONFIG);
+    if (String(url).includes("cognito-idp")) {
+      const body = JSON.parse(options.body);
+      assert.equal(body.AuthFlow, "USER_PASSWORD_AUTH");
+      return jsonResponse({
+        ChallengeName: "NEW_PASSWORD_REQUIRED",
+        Session: "session-1",
+      });
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  };
+
+  await assert.rejects(signIn("user@example.com", "TempPass1!"), isNewPasswordRequired);
+  assert.equal(localStorage.getItem("id_token"), null);
+});
+
+test("the new password completes an invite sign-in", async () => {
+  const calls = [];
+  fetchImpl = async (url, options) => {
+    if (String(url).includes("dliv_outputs.json")) return jsonResponse(CONFIG);
+    if (String(url).includes("cognito-idp")) {
+      const body = JSON.parse(options.body);
+      calls.push(body);
+      if (body.ChallengeName === "NEW_PASSWORD_REQUIRED") {
+        assert.equal(body.Session, "session-1");
+        assert.equal(body.ChallengeResponses.NEW_PASSWORD, "NewPass1!");
+        assert.equal(body.ChallengeResponses.USERNAME, "user@example.com");
+        return cognitoResult({ id: "id-login", refresh: "refresh-login" });
+      }
+      return jsonResponse({
+        ChallengeName: "NEW_PASSWORD_REQUIRED",
+        Session: "session-1",
+      });
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  };
+
+  await signIn("user@example.com", "TempPass1!", "NewPass1!");
+  assert.equal(calls.length, 2);
+  assert.equal(localStorage.getItem("id_token"), "id-login");
+  assert.equal(localStorage.getItem("refresh_token"), "refresh-login");
 });
 
 test("isAuthError is true only for unauthorized AuthError", async () => {

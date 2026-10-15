@@ -794,6 +794,10 @@
               <input type="password" id="private-password" placeholder="Password" autocomplete="current-password" />
               <span class="auth-show-pwd" onclick="togglePwd('private-password',this)">Show</span>
             </div>
+            <div class="auth-password-row" id="private-new-password-row" hidden>
+              <input type="password" id="private-new-password" placeholder="New password" autocomplete="new-password" />
+              <span class="auth-show-pwd" onclick="togglePwd('private-new-password',this)">Show</span>
+            </div>
             <button type="button" class="auth-signin-submit" onclick="handleSignIn()">Sign In</button>
             <p id="private-error" class="auth-sign-error"></p>
           </div>
@@ -880,6 +884,10 @@
             <div class="auth-password-row">
               <input type="password" id="pdfsearch-password" placeholder="Password" autocomplete="current-password" />
               <span class="auth-show-pwd" onclick="togglePwd('pdfsearch-password',this)">Show</span>
+            </div>
+            <div class="auth-password-row" id="pdfsearch-new-password-row" hidden>
+              <input type="password" id="pdfsearch-new-password" placeholder="New password" autocomplete="new-password" />
+              <span class="auth-show-pwd" onclick="togglePwd('pdfsearch-new-password',this)">Show</span>
             </div>
             <button type="button" class="auth-signin-submit" onclick="handlePdfSearchSignIn()">Sign In</button>
             <p id="pdfsearch-error" class="auth-sign-error"></p>

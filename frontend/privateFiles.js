@@ -1,6 +1,6 @@
 // privateFiles.js — invite-only private file browser
 import {
-  signIn, signOut, getIdToken, ensureSignedIn, authFetch, isAuthError, getDropboxApiUrl,
+  signIn, signOut, getIdToken, ensureSignedIn, authFetch, isAuthError, isNewPasswordRequired, getDropboxApiUrl,
   getVideoConvertApiUrl, isVideoConvertEnabled, loadingHtml,
 } from "./auth.js";
 import { putMultipart, formatS3UploadProgress, s3ProgressView, uploadErrorMessage } from "./s3Upload.js";
@@ -1686,14 +1686,19 @@ window.handleCreateFolder = async function () {
 window.handleSignIn = async function () {
   const email    = document.getElementById("private-email").value.trim();
   const password = document.getElementById("private-password").value;
+  const next     = document.getElementById("private-new-password")?.value || "";
   const errEl    = document.getElementById("private-error");
   errEl.textContent = "";
   setPrivateView("loading");
   try {
-    await signIn(email, password);
+    await signIn(email, password, next);
     await showFileBrowser();
   } catch (err) {
     showLoginForm();
+    if (isNewPasswordRequired(err)) {
+      const row = document.getElementById("private-new-password-row");
+      if (row) row.hidden = false;
+    }
     errEl.textContent = err.message ?? "Sign in failed.";
   }
 };

@@ -1,6 +1,6 @@
 // pdfSearch.js — private OCR PDF search (pdf-search-893)
 import {
-  signIn, signOut, ensureSignedIn, authFetch, isAuthError, getPdfSearchApiUrl, loadingHtml,
+  signIn, signOut, ensureSignedIn, authFetch, isAuthError, isNewPasswordRequired, getPdfSearchApiUrl, loadingHtml,
   syncAncestryNav,
 } from "./auth.js";
 import { putObject, putMultipart } from "./s3Upload.js";
@@ -135,12 +135,17 @@ export async function initPdfSearch() {
 window.handlePdfSearchSignIn = async function handlePdfSearchSignIn() {
   const email = document.getElementById("pdfsearch-email").value.trim();
   const password = document.getElementById("pdfsearch-password").value;
+  const next = document.getElementById("pdfsearch-new-password")?.value || "";
   const err = document.getElementById("pdfsearch-error");
   err.textContent = "";
   try {
-    await signIn(email, password);
+    await signIn(email, password, next);
     await initPdfSearch();
   } catch (e) {
+    if (isNewPasswordRequired(e)) {
+      const row = document.getElementById("pdfsearch-new-password-row");
+      if (row) row.hidden = false;
+    }
     err.textContent = e.message || "Sign in failed";
   }
 };

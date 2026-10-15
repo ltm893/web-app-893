@@ -270,17 +270,20 @@ export function isAuthError(err) {
   return err instanceof AuthError && err.unauthorized;
 }
 
-export async function signIn(email, password) {
-  const cfg = await getConfig();
-  const data = await cognitoRequest("InitiateAuth", {
-    AuthFlow:       "USER_PASSWORD_AUTH",
-    AuthParameters: { USERNAME: email, PASSWORD: password },
-    ClientId:       cfg.auth.user_pool_client_id,
-  });
+export class NewPasswordRequired extends Error {
+  constructor() {
+    super("Choose a new password to finish signing in. It needs 8 or more characters, with upper, lower, a number, and a symbol.");
+    this.name = "NewPasswordRequired";
+  }
+}
 
+export function isNewPasswordRequired(err) {
+  return err instanceof NewPasswordRequired || err?.name === "NewPasswordRequired";
+}
+
+function storeAuthResult(data) {
   const result = data.AuthenticationResult;
-  if (!result) throw new Error("Unexpected response from Cognito");
-
+  if (!result?.IdToken) throw new Error("Unexpected response from Cognito");
   saveTokens({
     idToken:      result.IdToken,
     accessToken:  result.AccessToken,
@@ -288,6 +291,32 @@ export async function signIn(email, password) {
     expiresIn:    result.ExpiresIn,
   });
   return result;
+}
+
+export async function signIn(email, password, newPassword = "") {
+  const cfg = await getConfig();
+  const data = await cognitoRequest("InitiateAuth", {
+    AuthFlow:       "USER_PASSWORD_AUTH",
+    AuthParameters: { USERNAME: email, PASSWORD: password },
+    ClientId:       cfg.auth.user_pool_client_id,
+  });
+
+  if (data.ChallengeName === "NEW_PASSWORD_REQUIRED") {
+    const next = String(newPassword || "").trim();
+    if (!next || !data.Session) throw new NewPasswordRequired();
+    const done = await cognitoRequest("RespondToAuthChallenge", {
+      ChallengeName: "NEW_PASSWORD_REQUIRED",
+      ClientId: cfg.auth.user_pool_client_id,
+      Session: data.Session,
+      ChallengeResponses: {
+        USERNAME: email,
+        NEW_PASSWORD: next,
+      },
+    });
+    return storeAuthResult(done);
+  }
+
+  return storeAuthResult(data);
 }
 
 export async function signOut() {

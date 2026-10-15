@@ -1,6 +1,6 @@
 // calendar.js — shared family calendar
 import {
-  ensureSignedIn, signIn, signOut, authFetch, isAuthError, getCalendarApiUrl, loadingHtml,
+  ensureSignedIn, signIn, signOut, authFetch, isAuthError, isNewPasswordRequired, getCalendarApiUrl, loadingHtml,
   syncAncestryNav,
 } from "./auth.js";
 
@@ -34,16 +34,21 @@ window.initCalendar = async function () {
 window.handleCalSignIn = async function () {
   const email    = document.getElementById("cal-email").value.trim();
   const password = document.getElementById("cal-password").value;
+  const next     = document.getElementById("cal-new-password")?.value || "";
   const errEl    = document.getElementById("cal-login-error");
   errEl.textContent = "";
   try {
-    await signIn(email, password);
+    await signIn(email, password, next);
     showCalContent();
     const now    = new Date();
     currentYear  = now.getFullYear();
     currentMonth = now.getMonth();
     renderCalendar();
   } catch (err) {
+    if (isNewPasswordRequired(err)) {
+      const row = document.getElementById("cal-new-password-row");
+      if (row) row.hidden = false;
+    }
     errEl.textContent = err.message ?? "Sign in failed.";
   }
 };

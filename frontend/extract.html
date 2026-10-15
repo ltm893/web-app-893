@@ -48,12 +48,13 @@
     <p>Sign in to remove this extract.</p>
     <input id="extract-email" type="email" autocomplete="username" required placeholder="Email" />
     <input id="extract-password" type="password" autocomplete="current-password" required placeholder="Password" />
+    <input id="extract-new-password" type="password" autocomplete="new-password" placeholder="New password" hidden />
     <button type="submit">Sign in</button>
   </form>
   <main id="pages"></main>
   <script type="module">
     import { extractPrintItems, extractRemovePlan } from "./extractPages.js";
-    import { authFetch, ensureSignedIn, getPdfSearchApiUrl, signIn } from "./auth.js";
+    import { authFetch, ensureSignedIn, getPdfSearchApiUrl, isNewPasswordRequired, signIn } from "./auth.js";
     import { pdfSearchDisplayLabel } from "./siteNav.js";
 
     const items = extractPrintItems(location.hash);
@@ -116,7 +117,9 @@
       e.preventDefault();
       const email = document.getElementById("extract-email").value;
       const password = document.getElementById("extract-password").value;
-      signIn(email, password).then(() => deleteExtracts()).catch((err) => {
+      const next = document.getElementById("extract-new-password").value;
+      signIn(email, password, next).then(() => deleteExtracts()).catch((err) => {
+        if (isNewPasswordRequired(err)) document.getElementById("extract-new-password").hidden = false;
         status.textContent = err.message || "Could not sign in";
       });
     });
