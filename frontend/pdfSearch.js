@@ -166,7 +166,7 @@ async function loadCatalog() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     catalogDocs = (data.documents || [])
-      .filter((d) => d.key && d.filename)
+      .filter((d) => d.key && d.filename && d.status !== "OCR_FAILED")
       .sort(compareCatalogTitle);
     populateSearchBoxList();
     showBoxes();
@@ -1741,6 +1741,7 @@ function startOcrPoll(keys) {
   const wanted = [...new Set((keys || []).filter(Boolean))];
   if (!wanted.length) return;
   const t0 = Date.now();
+  const seen = new Set();
   const tick = async () => {
     const statusEl = document.getElementById("pdfsearch-upload-status");
     try {
@@ -1751,6 +1752,10 @@ function startOcrPoll(keys) {
       const byKey = new Map((data.documents || []).filter((d) => d.key).map((d) => [d.key, d]));
       const rows = wanted.map((key) => {
         const doc = byKey.get(key);
+        if (doc?.status && doc.status !== "OCR_FAILED") seen.add(key);
+        if (doc?.status === "OCR_FAILED" || (!doc && seen.has(key))) {
+          return { key, status: "OCR_FAILED", pageCount: 0 };
+        }
         return { key, status: doc?.status || "WAITING", pageCount: doc?.pageCount || 0 };
       });
       console.log("[ancestry-ocr] poll", rows);
