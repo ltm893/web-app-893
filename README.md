@@ -4,6 +4,8 @@ Generic Amplify frontend for the **cognito-s3-stack-893** family. Static files o
 
 This repo is the **template**. Fork it as `your-domain-web` (the dliv.com fork is **`dliv-web`**). Backends stay in their own CDK repos — Amplify hosts the website and does **not** deploy stacks.
 
+`dliv-web` does not commit this frontend. Its Amplify build clones the branch in `TEMPLATE_REF` (`dev` by default, `main` on the dliv.com branch) and copies it into `frontend/`. A push here does not rebuild dev.dliv.com or dliv.com. Rebuild the Amplify branch whose `TEMPLATE_REF` is the branch you pushed. See `dliv-web` README, "Rebuilding after a web-app-893 change".
+
 No Amplify SDK. `auth.js` uses raw Cognito SRP. Tokens live in `localStorage` and stay after the browser restarts.
 
 ## Features

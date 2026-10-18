@@ -32,6 +32,7 @@ import {
   showFolderRenameButton,
   showLibraryAddMenu,
   showLibraryFileMenu,
+  showShareWithAll,
   showStandaloneFolderButton,
   showVideoEditControls,
   showVideoUploadButton,
@@ -500,6 +501,7 @@ function patchListedFileRow(fromKey, nextKey) {
       if (fn.includes("openClipFromMenu")) btn.setAttribute("onclick", `openClipFromMenu('${nextEnc}')`);
       else if (fn.includes("renameFromMenu")) btn.setAttribute("onclick", `renameFromMenu('${nextEnc}')`);
       else if (fn.includes("startCombineWith")) btn.setAttribute("onclick", `startCombineWith('${nextEnc}')`);
+      else if (fn.includes("shareWithAllFromMenu")) btn.setAttribute("onclick", `shareWithAllFromMenu('${nextEnc}')`);
       else if (fn.includes("removeFromMenu")) btn.setAttribute("onclick", `removeFromMenu('${nextEnc}','${encodeURIComponent(nextName)}')`);
     }
   } else {
@@ -1285,6 +1287,43 @@ window.removeFromMenu = function (encodedKey, encodedName) {
   window.handleDeleteFile(encodedKey, decodeURIComponent(encodedName || ""));
 };
 
+window.shareWithAllFromMenu = function (encodedKey) {
+  closeVideosMenus();
+  window.shareWithAllDliv(encodedKey);
+};
+
+window.shareWithAllDliv = async function (encodedKey) {
+  const key = decodeURIComponent(encodedKey || "");
+  const folder = isFolderKey(key);
+  const name = folder ? folderNameFromKey(key) : fileNameFromKey(key);
+  const message = folder
+    ? `Make "${name}" available to all DLIV users? Every file in this folder is copied. Your folder stays here.`
+    : `Make "${name}" available to all DLIV users? Your copy stays in this folder.`;
+  if (!confirm(message)) return;
+  if (!(await ensureSignedIn())) { handleSessionExpired(); return; }
+  await withListOpProgress("Sharing", async () => {
+    try {
+      const apiUrl = await getDropboxApiUrl();
+      const res = await authFetch(`${apiUrl}files/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 502 || res.status === 503 || res.status === 504) {
+          throw new Error("Sharing is still running. Check All DLIV Users in a moment.");
+        }
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      alert(`"${name}" is available to all DLIV users.`);
+    } catch (err) {
+      if (isAuthError(err)) { handleSessionExpired(); return; }
+      alert("Could not share: " + (err.message || "Error"));
+    }
+  });
+};
+
 window.openCombineDialog = function () {
   const keys = [...document.querySelectorAll(".video-combine-checkbox:checked")].map((box) => decodeURIComponent(box.dataset.key || ""));
   if (keys.length < 2) {
@@ -1820,6 +1859,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
       const folderEnc = encodeURIComponent(f.key);
       const folderItems = [];
       if (!downloadMode && showFolderRenameButton(currentTab, f.key, currentUserId)) folderItems.push("Rename");
+      if (!downloadMode && showShareWithAll(currentTab, f.key, currentUserId)) folderItems.push("All DLIV users");
       if (!f.hasSubFolders && f.hasFiles) folderItems.push("Empty");
       else if (!f.hasSubFolders && !reserved) folderItems.push("Remove");
       const folderMenu = folderItems.length
@@ -1827,6 +1867,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
             <button type="button" class="file-menu-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Folder" onclick="toggleFileMenu(event, '${folderEnc}')">⋯</button>
             <div class="file-menu-list" data-key="${folderEnc}" hidden>
               ${folderItems.includes("Rename") ? `<button type="button" onclick="renameFolderFromMenu('${folderEnc}')">Rename</button>` : ""}
+              ${folderItems.includes("All DLIV users") ? `<button type="button" onclick="shareWithAllFromMenu('${folderEnc}')">All DLIV users</button>` : ""}
               ${folderItems.includes("Empty") ? `<button type="button" onclick="emptyFolderFromMenu('${folderEnc}','${encodeURIComponent(name)}')">Empty</button>` : ""}
               ${folderItems.includes("Remove") ? `<button type="button" onclick="removeFolderFromMenu('${folderEnc}','${encodeURIComponent(name)}')">Remove</button>` : ""}
             </div>
@@ -1864,6 +1905,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
         downloadMode,
         combineMode: videoCombineMode,
         canEdit,
+        canShare: showShareWithAll(currentTab, f.key, currentUserId),
       }) : (!downloadMode && !videoCombineMode ? ["Rename"] : []);
       const fileMenu = menuItems.length
         ? `<div class="file-menu">
@@ -1872,6 +1914,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
               ${menuItems.includes("Clip") ? `<button type="button" onclick="openClipFromMenu('${enc}')">Clip</button>` : ""}
               ${menuItems.includes("Rename") ? `<button type="button" onclick="renameFromMenu('${enc}')">Rename</button>` : ""}
               ${menuItems.includes("Combine") ? `<button type="button" onclick="startCombineWith('${enc}')">Combine</button>` : ""}
+              ${menuItems.includes("All DLIV users") ? `<button type="button" onclick="shareWithAllFromMenu('${enc}')">All DLIV users</button>` : ""}
               ${menuItems.includes("Remove") ? `<button type="button" onclick="removeFromMenu('${enc}','${encodeURIComponent(name)}')">Remove</button>` : ""}
             </div>
           </div>`
@@ -3038,7 +3081,10 @@ async function deleteFileByKey(encodedKey, name, { skipConfirm = false } = {}) {
   try {
     const apiUrl = await getDropboxApiUrl();
     const res = await authFetch(`${apiUrl}files/${encodedKey}`, { method: "DELETE" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || `HTTP ${res.status}`);
+    }
     if (currentUserId && key.startsWith(`users/${currentUserId}/`)) {
       await forgetConvertedVideo({ key });
     }
@@ -3193,7 +3239,10 @@ window.handleEmptyFolder = async function (encodedKey, name) {
     try {
       const apiUrl = await getDropboxApiUrl();
       const res = await authFetch(`${apiUrl}files?prefix=${encodedKey}&mode=empty`, { method: "DELETE" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
       await forgetConvertedVideo({ prefix: decodeURIComponent(encodedKey) });
       await reloadFilesAfterOp();
     } catch (err) {
@@ -3209,7 +3258,10 @@ window.handleRemoveFolder = async function (encodedKey, name) {
     try {
       const apiUrl = await getDropboxApiUrl();
       const res = await authFetch(`${apiUrl}files?prefix=${encodedKey}&mode=remove`, { method: "DELETE" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
       await forgetConvertedVideo({ prefix: decodeURIComponent(encodedKey) });
       const parent = decodeURIComponent(encodedKey).split("/").slice(0, -2).join("/");
       await loadFiles(parent ? parent + "/" : "", { keepVisibleList: true });

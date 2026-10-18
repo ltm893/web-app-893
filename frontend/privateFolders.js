@@ -112,6 +112,14 @@ export function showLibraryFileMenu(tab, prefix, userId) {
   return listingLibrary(tab, prefix, userId) !== "";
 }
 
+export function showShareWithAll(tab, key, userId) {
+  if (tab !== "mine" || !userId) return false;
+  const raw = String(key || "").replace(/^\/+/, "");
+  if (!raw || isReservedLibraryFolder(tab, raw, userId)) return false;
+  const asPrefix = raw.endsWith("/") ? raw : raw.slice(0, raw.lastIndexOf("/") + 1);
+  return listingLibrary(tab, asPrefix, userId) !== "";
+}
+
 export function showStandaloneFolderButton(tab, prefix, userId, videoConvertOn) {
   return !showLibraryAddMenu(tab, prefix, userId, videoConvertOn);
 }
@@ -127,7 +135,7 @@ export function videosFileMenuItems({ convertOn, isMp4, downloadMode, combineMod
   });
 }
 
-export function libraryFileMenuItems({ library, convertOn, isMp4, downloadMode, combineMode, canEdit }) {
+export function libraryFileMenuItems({ library, convertOn, isMp4, downloadMode, combineMode, canEdit, canShare }) {
   if (downloadMode || combineMode) return [];
   if (!library) return [];
   const items = ["Rename"];
@@ -135,6 +143,7 @@ export function libraryFileMenuItems({ library, convertOn, isMp4, downloadMode, 
     items.unshift("Clip");
     items.push("Combine");
   }
+  if (canShare) items.push("All DLIV users");
   items.push("Remove");
   return items;
 }

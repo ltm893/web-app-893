@@ -1,6 +1,6 @@
 # CONTEXT.md — web-app-893
 # Maintainer notes. Setup is in README.md.
-# Last updated: 2026-10-11
+# Last updated: 2026-10-18
 
 ## What this repo is
 Generic, cloneable web frontend add-on for cognito-s3-stack-893.
@@ -113,6 +113,6 @@ web-app-893/
 ## Status
 `amplify.yml` already writes `frontend/dliv_outputs.json` from the Amplify branch env vars. That file is gitignored. `dliv_outputs.example.json` is the committed schema.
 
-Fork this repo for a new domain. `dliv-web` is the dliv.com deployment of this template, not the repo to fork.
+Fork this repo for a new domain. `dliv-web` is the dliv.com deployment of this template, not the repo to fork. Pushing this repo does not rebuild that site. Amplify clones `TEMPLATE_REF` only while building `dliv-web`. Rebuild that Amplify branch after the matching branch here is updated.
 
 PDF search and video convert stay off when `PDF_SEARCH_API_URL` and `VIDEO_CONVERT_API_URL` are blank.
