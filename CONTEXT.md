@@ -115,6 +115,6 @@ web-app-893/
 
 Fork this repo for a new domain. `dliv-web` is the dliv.com deployment of this template, not the repo to fork. Pushing this repo does not rebuild that site. Amplify clones `TEMPLATE_REF` only while building `dliv-web`. Rebuild that Amplify branch after the matching branch here is updated.
 
-All DLIV Users does not add or rename files or folders. Mine uses **Share on DLIV** to copy a Music, Photos, or Videos file or album into a folder named for that account.
+All DLIV Users does not add, rename, or move files or folders. Mine uses **Move** to place a file or folder somewhere else in that account. Music, Photos, and Videos stay where they are. **Share on DLIV** copies a Music, Photos, or Videos file or album into a folder named for that account.
 
 PDF search and video convert stay off when `PDF_SEARCH_API_URL` and `VIDEO_CONVERT_API_URL` are blank.
