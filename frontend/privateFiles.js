@@ -29,6 +29,7 @@ import {
   libraryFileMenuItems,
   listingLibrary,
   showFileUploadButton,
+  canRenameLibraryKey,
   showFolderRenameButton,
   showLibraryAddMenu,
   showLibraryFileMenu,
@@ -779,6 +780,7 @@ function jobOutputFolderAction(job) {
 
 window.renamePrivateFile = async function (encodedKey) {
   const fromKey = decodeURIComponent(encodedKey || "");
+  if (!canRenameLibraryKey(fromKey)) return;
   if (isFolderKey(fromKey)) return window.renamePrivateFolder(encodedKey);
   const currentName = fromKey.split("/").pop() || "";
   const typed = prompt("New file name", currentName);
@@ -789,6 +791,7 @@ window.renamePrivateFile = async function (encodedKey) {
 window.renamePrivateFolder = async function (encodedKey) {
   let fromKey = decodeURIComponent(encodedKey || "");
   if (fromKey && !fromKey.endsWith("/")) fromKey += "/";
+  if (!canRenameLibraryKey(fromKey)) return;
   const currentName = folderNameFromKey(fromKey);
   const typed = prompt("New folder name", currentName);
   if (typed == null) return;
@@ -1907,7 +1910,8 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
         combineMode: videoCombineMode,
         canEdit,
         canShare: showShareWithAll(currentTab, f.key, currentUserId),
-      }) : (!downloadMode && !videoCombineMode ? ["Rename"] : []);
+        canRename: currentTab !== "shared",
+      }) : (!downloadMode && !videoCombineMode && currentTab !== "shared" ? ["Rename"] : []);
       const fileMenu = menuItems.length
         ? `<div class="file-menu">
             <button type="button" class="file-menu-toggle" aria-haspopup="true" aria-expanded="false" aria-label="File" onclick="toggleFileMenu(event, '${enc}')">⋯</button>

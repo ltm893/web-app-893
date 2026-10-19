@@ -11,7 +11,7 @@ No Amplify SDK. `auth.js` uses raw Cognito SRP. Tokens live in `localStorage` an
 ## Features
 
 - **Slideshows** — public albums from `dropbox-893` (`GET /albums`)
-- **Dropbox** — private files (Cognito JWT). All DLIV Users has no Add. From Mine, **Share on DLIV** copies a Music, Photos, or Videos file or album into a folder with that person's name.
+- **Dropbox** — private files (Cognito JWT). All DLIV Users has no Add and no Rename. From Mine, **Share on DLIV** copies a Music, Photos, or Videos file or album into a folder with that person's name.
 - **Calendar** — CRUD via `calendar-893`
 - **PDF Search** — shown when `PDF_SEARCH_API_URL` is set (`pdf-search-893`). Search, plus multipart S3 intake of PDFs into the docs bucket.
 

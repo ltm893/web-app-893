@@ -141,10 +141,11 @@ export function videosFileMenuItems({ convertOn, isMp4, downloadMode, combineMod
   });
 }
 
-export function libraryFileMenuItems({ library, convertOn, isMp4, downloadMode, combineMode, canEdit, canShare }) {
+export function libraryFileMenuItems({ library, convertOn, isMp4, downloadMode, combineMode, canEdit, canShare, canRename = true }) {
   if (downloadMode || combineMode) return [];
   if (!library) return [];
-  const items = ["Rename"];
+  const items = [];
+  if (canRename) items.push("Rename");
   if (canEdit && convertOn && isMp4) {
     items.unshift("Clip");
     items.push("Combine");
@@ -186,7 +187,12 @@ export function jobMusicFolderLabel(who, userId, job) {
 
 const RENAMEABLE_LIBRARY_FOLDERS = ["Music/", "Photos/"];
 
+export function canRenameLibraryKey(key) {
+  return String(key || "").replace(/^\/+/, "").startsWith("users/");
+}
+
 export function showFolderRenameButton(tab, folderKey, userId) {
+  if (tab === "shared") return false;
   const key = String(folderKey || "").endsWith("/") ? String(folderKey) : `${folderKey || ""}/`;
   if (!key || isReservedLibraryFolder(tab, key, userId)) return false;
   return RENAMEABLE_LIBRARY_FOLDERS.some((name) => {
@@ -194,7 +200,6 @@ export function showFolderRenameButton(tab, folderKey, userId) {
       const root = mineLibraryKey(userId, name);
       return key.startsWith(root) && key !== root;
     }
-    if (tab === "shared") return key.startsWith(name) && key !== name;
     return false;
   });
 }

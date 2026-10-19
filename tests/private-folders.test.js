@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   LIBRARY_FOLDER_NAMES,
+  canRenameLibraryKey,
   compareLibraryFolders,
   isReservedLibraryFolder,
   libraryAddMenuItems,
@@ -181,10 +182,18 @@ test("Music and Photos album folders can be renamed; library roots cannot", () =
   assert.equal(showFolderRenameButton("mine", photos, sub), false);
   assert.equal(showFolderRenameButton("mine", `${photos}Barlieb RESZ/`, sub), true);
   assert.equal(showFolderRenameButton("mine", `${photos}GETZ pics/Barlieb/`, sub), true);
-  assert.equal(showFolderRenameButton("shared", "Music/CD20261001-1/", sub), true);
-  assert.equal(showFolderRenameButton("shared", "Photos/Family/", sub), true);
+  assert.equal(showFolderRenameButton("shared", "Music/CD20261001-1/", sub), false);
+  assert.equal(showFolderRenameButton("shared", "Photos/Family/", sub), false);
+  assert.equal(showFolderRenameButton("shared", "Photos/Wenner2026/Florence/", sub), false);
+  assert.equal(showFolderRenameButton("shared", "Videos/Wenner2026/Camping/", sub), false);
   assert.equal(showFolderRenameButton("shared", "Photos/", sub), false);
   assert.equal(showFolderRenameButton("mine", `${videos}clips/`, sub), false);
+  assert.equal(canRenameLibraryKey(`${photos}Family/pic.jpg`), true);
+  assert.equal(canRenameLibraryKey("Photos/Wenner2026/Family/pic.jpg"), false);
+  assert.equal(canRenameLibraryKey("Videos/clip.mp4"), false);
+  assert.deepEqual(libraryFileMenuItems({
+    library: "Photos", convertOn: false, isMp4: false, downloadMode: false, combineMode: false, canEdit: false, canRename: false,
+  }), ["Remove"]);
 });
 
 test("library folders sort first as Music, Photos, Videos", () => {
