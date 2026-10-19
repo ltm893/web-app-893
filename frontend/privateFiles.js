@@ -765,7 +765,7 @@ window.renamePrivateFile = async function (encodedKey) {
   if (!canRenameLibraryKey(fromKey)) return;
   if (isFolderKey(fromKey)) return window.renamePrivateFolder(encodedKey);
   const currentName = fromKey.split("/").pop() || "";
-  const typed = prompt("New file name", currentName);
+  const typed = await askTypedName("New file name", currentName);
   if (typed == null) return;
   await runPrivateRename(fromKey, typed);
 };
@@ -775,7 +775,7 @@ window.renamePrivateFolder = async function (encodedKey) {
   if (fromKey && !fromKey.endsWith("/")) fromKey += "/";
   if (!canRenameLibraryKey(fromKey)) return;
   const currentName = folderNameFromKey(fromKey);
-  const typed = prompt("New folder name", currentName);
+  const typed = await askTypedName("New folder name", currentName);
   if (typed == null) return;
   await runPrivateRename(fromKey, typed);
 };
@@ -1679,10 +1679,81 @@ window.handleUpload = async function (overrideFile = null) {
   }
 };
 
+// iPhone's native prompt applies the highlighted keyboard suggestion on OK.
+let namePromptResolve = null;
+
+function finishNamePrompt(value) {
+  const resolve = namePromptResolve;
+  namePromptResolve = null;
+  const root = document.getElementById("name-prompt");
+  if (root) root.hidden = true;
+  if (resolve) resolve(value);
+}
+
+function askTypedName(title, initial = "") {
+  const root = document.getElementById("name-prompt");
+  const input = document.getElementById("name-prompt-input");
+  const heading = document.getElementById("name-prompt-title");
+  if (!root || !input || !heading) return Promise.resolve(prompt(title, initial));
+  if (namePromptResolve) finishNamePrompt(null);
+  heading.textContent = title;
+  input.value = initial;
+  root.hidden = false;
+  input.focus();
+  const end = input.value.length;
+  input.setSelectionRange(end, end);
+  return new Promise((resolve) => {
+    namePromptResolve = resolve;
+  });
+}
+
+function bindNamePrompt() {
+  const root = document.getElementById("name-prompt");
+  const box = document.getElementById("name-prompt-box");
+  const input = document.getElementById("name-prompt-input");
+  const ok = document.getElementById("name-prompt-ok");
+  const cancel = document.getElementById("name-prompt-cancel");
+  if (!root || !box || !input || !ok || !cancel || root.dataset.bound === "1") return;
+  root.dataset.bound = "1";
+  let typedBeforeBlur = null;
+  ok.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    typedBeforeBlur = input.value;
+  });
+  ok.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const value = typedBeforeBlur == null ? input.value : typedBeforeBlur;
+    typedBeforeBlur = null;
+    finishNamePrompt(value);
+  });
+  cancel.addEventListener("click", () => finishNamePrompt(null));
+  root.addEventListener("click", (event) => {
+    if (event.target === root) finishNamePrompt(null);
+  });
+  box.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const value = typedBeforeBlur == null ? input.value : typedBeforeBlur;
+    typedBeforeBlur = null;
+    finishNamePrompt(value);
+  });
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      finishNamePrompt(null);
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      finishNamePrompt(input.value);
+    }
+  });
+}
+
+bindNamePrompt();
+
 // ── Create Folder ─────────────────────────────────────────────────────────────
 window.handleCreateFolder = async function () {
   if (currentTab === "shared") return;
-  const raw = prompt("New folder name:");
+  const raw = await askTypedName("New folder name");
   if (raw === null) return;
   const name = raw.trim().replace(/\/+/g, "");
   if (!name) { alert("Folder name cannot be empty."); return; }

@@ -193,6 +193,16 @@
     #video-edit-save { background: #1e3a5f; color: white; }
     #video-edit-save:disabled { opacity: 0.5; cursor: wait; }
     #video-edit-cancel { background: transparent; color: #1e3a5f; }
+    #name-prompt { position: fixed; inset: 0; z-index: 1400; background: rgba(0,0,0,0.45); display: flex; align-items: flex-start; justify-content: center; padding: 12vh 1rem 1rem; }
+    #name-prompt[hidden] { display: none; }
+    #name-prompt-box { background: white; border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 420px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+    #name-prompt-box h3 { margin: 0 0 0.75rem; color: #1e3a5f; font-size: 1rem; }
+    #name-prompt-input { display: block; width: 100%; box-sizing: border-box; margin: 0; padding: 0.55rem 0.75rem; border: 1.5px solid #dde3ec; border-radius: 8px; font-size: 16px; font-family: Arial, sans-serif; }
+    #name-prompt-input:focus { border-color: #1e3a5f; outline: none; }
+    #name-prompt-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+    #name-prompt-actions button { font-size: 0.82rem; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; border: 1.5px solid #1e3a5f; }
+    #name-prompt-ok { background: #1e3a5f; color: white; }
+    #name-prompt-cancel { background: transparent; color: #1e3a5f; }
 
     .tab-bar { display: flex; align-items: flex-end; gap: 3px; margin-top: 0.75rem; margin-bottom: 0; border-bottom: 2px solid #1e3a5f; flex-wrap: nowrap; overflow-x: auto; }
     .tab-btn { margin-top: 0 !important; border-radius: 7px 7px 0 0 !important; border: 2px solid #1e3a5f !important; border-bottom: none !important; background: #c8d8e8 !important; color: #1e3a5f !important; font-size: 0.82rem; font-weight: 600; font-family: Arial, sans-serif; padding: 0.35rem 1.25rem 0.45rem !important; cursor: pointer; position: relative; bottom: -2px; transition: background 0.15s, color 0.15s, padding 0.1s; white-space: nowrap; flex-shrink: 0; }
@@ -996,6 +1006,17 @@
     <input id="player-progress" type="range" min="0" max="100" value="0" oninput="playerSeek(this)" />
     <span id="player-count"></span>
     <button onclick="playerStop()">■ Stop</button>
+  </div>
+
+  <div id="name-prompt" hidden role="dialog" aria-modal="true" aria-labelledby="name-prompt-title">
+    <form id="name-prompt-box">
+      <h3 id="name-prompt-title">New folder name</h3>
+      <input id="name-prompt-input" type="text" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      <div id="name-prompt-actions">
+        <button type="button" id="name-prompt-ok">OK</button>
+        <button type="button" id="name-prompt-cancel">Cancel</button>
+      </div>
+    </form>
   </div>
 
   <div id="video-edit-modal" hidden role="dialog" aria-modal="true" aria-labelledby="video-edit-title">
