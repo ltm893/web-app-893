@@ -59,6 +59,13 @@ export function showFileUploadButton(tab, prefix, userId) {
   return true;
 }
 
+export function videoConvertOutputPrefix(userId, prefix) {
+  const root = userId ? `users/${userId}/Videos/` : "";
+  const current = String(prefix || "");
+  if (!root || (current !== root && !current.startsWith(root))) return root;
+  return current.endsWith("/") ? current : `${current}/`;
+}
+
 export function showVideoUploadButton(tab, prefix, userId, videoConvertOn) {
   if (!videoConvertOn) return false;
   if (tab === "video") return true;

@@ -19,6 +19,7 @@ import {
   showStandaloneFolderButton,
   showVideoEditControls,
   showVideoUploadButton,
+  videoConvertOutputPrefix,
   showVideosAddMenu,
   showVideosFileMenu,
   videosFileMenuItems,
@@ -145,6 +146,15 @@ test("Music and Photos use the Add menu and a hover file menu like Videos", () =
   }), ["Rename", "Share on DLIV", "Remove"]);
   assert.equal(showStandaloneFolderButton("mine", music, sub, true), false);
   assert.equal(showStandaloneFolderButton("shared", "Music/", sub, true), false);
+});
+
+test("a converted video stays in the Videos folder it was uploaded from", () => {
+  const videos = mineLibraryKey(sub, "Videos/");
+  const folder = `${videos}TaylorsGang/`;
+  assert.equal(videoConvertOutputPrefix(sub, folder), folder);
+  assert.equal(videoConvertOutputPrefix(sub, videos), videos);
+  assert.equal(videoConvertOutputPrefix(sub, mineLibraryKey(sub, "Photos/")), videos);
+  assert.equal(videoConvertOutputPrefix(sub, mineRootPrefix(sub)), videos);
 });
 
 test("Music + File rejects anything that is not an mp3", () => {

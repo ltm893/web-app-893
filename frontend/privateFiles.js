@@ -37,6 +37,7 @@ import {
   showStandaloneFolderButton,
   showVideoEditControls,
   showVideoUploadButton,
+  videoConvertOutputPrefix,
 } from "./privateFolders.js";
 import { latestJobsByName } from "./videoJobs.js";
 import { clipRequest, clipTimesFromMarks, combineRequest, formatMediaTimestamp, isMineMp4Key, suggestEditName } from "./videoEdit.js";
@@ -561,7 +562,7 @@ function mergedVideoJobs() {
 
 function videoStatusCopyHtml() {
   const who = escapeHtml(currentUserLabel || "Mine");
-  return `Keep this <span class="video-status-tab-name">Format Conversions</span> tab open until the upload finishes — closing this tab or sleeping stops the transfer. Finished MP4s land in ${who} → Videos. MP3s land in a dated folder under ${who} → Music.`;
+  return `Keep this <span class="video-status-tab-name">Format Conversions</span> tab open until the upload finishes — closing this tab or sleeping stops the transfer. Finished MP4s land in the Videos folder you uploaded from. MP3s land in a dated folder under ${who} → Music.`;
 }
 
 function setVideoStatusCopy() {
@@ -1082,6 +1083,7 @@ function beginLocalVideoJob(filename, sizes = {}) {
     outputKeys: [],
     expectedBytes: Number(sizes.expectedBytes) || 0,
     uploadedBytes: Number(sizes.uploadedBytes) || 0,
+    outputPrefix: sizes.outputPrefix || "",
   });
   renderVideoJobs();
   return localId;
@@ -1422,10 +1424,11 @@ window.startDiscUpload = async function () {
 
 async function uploadVideoFile(file) {
   if (!file) return;
+  const outputPrefix = videoConvertOutputPrefix(currentUserId, currentPrefix);
   const uploadArea = document.getElementById("upload-area");
   if (uploadArea) uploadArea.style.display = "none";
   openVideoStatusTab();
-  const localId = beginLocalVideoJob(file.name, { expectedBytes: file.size, uploadedBytes: 0 });
+  const localId = beginLocalVideoJob(file.name, { expectedBytes: file.size, uploadedBytes: 0, outputPrefix });
   const apiUrl = await getVideoConvertApiUrl();
   let jobId = localId;
   await holdWakeLock();
@@ -1433,7 +1436,11 @@ async function uploadVideoFile(file) {
     await putMultipart(file, {
       ...videoMultipartHandlers(apiUrl, { filename: file.name }),
       initiate: async ({ contentType }) => {
-        const data = await videoConvertPost(apiUrl, "uploads", { filename: file.name, contentType });
+        const data = await videoConvertPost(apiUrl, "uploads", { filename: file.name, contentType, outputPrefix });
+        if (data.jobId) {
+          const row = videoLocalJobs.get(data.jobId) || videoLocalJobs.get(localId);
+          if (row) row.outputPrefix = data.outputPrefix || outputPrefix;
+        }
         jobId = data.jobId || localId;
         adoptVideoJob(localId, jobId, file.name);
         return data;
