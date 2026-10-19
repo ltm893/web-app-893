@@ -18,7 +18,9 @@ import {
   videoJobTitle,
 } from "./privateRename.js";
 import {
+  canMoveLibraryItem,
   compareLibraryFolders,
+  moveDestinationError,
   isReservedLibraryFolder,
   jobMusicFolderLabel,
   jobMusicFolderPrefix,
@@ -486,6 +488,7 @@ function patchListedFileRow(fromKey, nextKey) {
       else if (fn.includes("renameFromMenu")) btn.setAttribute("onclick", `renameFromMenu('${nextEnc}')`);
       else if (fn.includes("startCombineWith")) btn.setAttribute("onclick", `startCombineWith('${nextEnc}')`);
       else if (fn.includes("shareWithAllFromMenu")) btn.setAttribute("onclick", `shareWithAllFromMenu('${nextEnc}')`);
+      else if (fn.includes("moveFromMenu")) btn.setAttribute("onclick", `moveFromMenu('${nextEnc}')`);
       else if (fn.includes("removeFromMenu")) btn.setAttribute("onclick", `removeFromMenu('${nextEnc}','${encodeURIComponent(nextName)}')`);
     }
   } else {
@@ -1269,6 +1272,11 @@ window.runLibraryAddAction = function (action) {
   } else if (action === "folder") window.handleCreateFolder();
 };
 
+window.moveFromMenu = function (encodedKey) {
+  closeVideosMenus();
+  openMovePicker(decodeURIComponent(encodedKey || ""));
+};
+
 window.removeFromMenu = function (encodedKey, encodedName) {
   closeVideosMenus();
   window.handleDeleteFile(encodedKey, decodeURIComponent(encodedName || ""));
@@ -1757,6 +1765,145 @@ function bindNamePrompt() {
 
 bindNamePrompt();
 
+let moveSourceKey = "";
+let movePickerPrefix = "";
+let movePickerGen = 0;
+
+function movePlaceLabel(prefix) {
+  const home = mineRootPrefix(currentUserId);
+  if (!prefix || prefix === home) return currentUserLabel || "Home";
+  const rest = prefix.startsWith(home) ? prefix.slice(home.length) : prefix;
+  return rest.replace(/\/$/, "").split("/").filter(Boolean).join(" / ");
+}
+
+function moveParentPrefix(prefix) {
+  const home = mineRootPrefix(currentUserId);
+  if (!prefix || prefix === home || !prefix.startsWith(home)) return "";
+  const trimmed = prefix.endsWith("/") ? prefix.slice(0, -1) : prefix;
+  const parent = trimmed.slice(0, trimmed.lastIndexOf("/") + 1);
+  return parent.startsWith(home) ? parent : home;
+}
+
+function closeMovePicker() {
+  movePickerGen += 1;
+  const root = document.getElementById("move-picker");
+  if (root) root.hidden = true;
+  moveSourceKey = "";
+}
+
+async function renderMovePicker(prefix) {
+  const gen = ++movePickerGen;
+  movePickerPrefix = prefix;
+  const where = document.getElementById("move-picker-where");
+  const list = document.getElementById("move-picker-list");
+  const up = document.getElementById("move-picker-up");
+  const error = document.getElementById("move-picker-error");
+  if (where) where.textContent = movePlaceLabel(prefix);
+  if (up) up.hidden = !moveParentPrefix(prefix);
+  if (error) error.textContent = "";
+  if (list) list.innerHTML = `<li class="move-picker-empty">Loading</li>`;
+  try {
+    const apiUrl = await getDropboxApiUrl();
+    const res = await authFetch(`${apiUrl}files?prefix=${encodeURIComponent(prefix)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json().catch(() => ({}));
+    if (gen !== movePickerGen) return;
+    const folders = (Array.isArray(data.folders) ? data.folders : [])
+      .map((folder) => folder.key)
+      .filter((key) => {
+        if (!moveSourceKey.endsWith("/")) return true;
+        return key !== moveSourceKey && !key.startsWith(moveSourceKey);
+      })
+      .sort((a, b) => compareLibraryFolders(a, b, prefix));
+    if (!list) return;
+    list.innerHTML = folders.length
+      ? folders.map((key) => {
+        const name = key.slice(prefix.length).replace(/\/$/, "");
+        return `<li><button type="button" data-move-folder="${encodeURIComponent(key)}">📁 ${escapeHtml(name)}</button></li>`;
+      }).join("")
+      : `<li class="move-picker-empty">No folders in here.</li>`;
+  } catch (err) {
+    if (gen !== movePickerGen) return;
+    if (isAuthError(err)) { closeMovePicker(); handleSessionExpired(); return; }
+    if (list) list.innerHTML = "";
+    if (error) error.textContent = err.message || "Could not list folders.";
+  }
+}
+
+function openMovePicker(key) {
+  if (!canMoveLibraryItem(currentTab, key, currentUserId)) return;
+  const root = document.getElementById("move-picker");
+  const title = document.getElementById("move-picker-title");
+  if (!root) return;
+  moveSourceKey = key;
+  const name = key.endsWith("/") ? folderNameFromKey(key) : fileNameFromKey(key);
+  if (title) title.textContent = `Move "${name}"`;
+  root.hidden = false;
+  renderMovePicker(mineRootPrefix(currentUserId));
+}
+
+async function performMove(fromKey, destPrefix) {
+  closeMovePicker();
+  if (!(await ensureSignedIn())) { handleSessionExpired(); return; }
+  await withListOpProgress("Moving", async () => {
+    try {
+      const apiUrl = await getDropboxApiUrl();
+      const res = await authFetch(`${apiUrl}files`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: fromKey, destPrefix }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      if (!data.unchanged && data.key) {
+        const home = mineRootPrefix(currentUserId);
+        const rest = fromKey.startsWith(home) ? fromKey.slice(home.length) : "";
+        if (rest.startsWith("Videos/") || rest.startsWith("Music/")) {
+          await persistRenamedVideoOutput(fromKey, data.key);
+        }
+      }
+      await loadFiles(currentPrefix);
+    } catch (err) {
+      if (isAuthError(err)) { handleSessionExpired(); return; }
+      alert("Could not move: " + (err.message || "Error"));
+    }
+  });
+}
+
+function bindMovePicker() {
+  const root = document.getElementById("move-picker");
+  const list = document.getElementById("move-picker-list");
+  const up = document.getElementById("move-picker-up");
+  const here = document.getElementById("move-picker-here");
+  const cancel = document.getElementById("move-picker-cancel");
+  const error = document.getElementById("move-picker-error");
+  if (!root || !list || !up || !here || !cancel || root.dataset.bound === "1") return;
+  root.dataset.bound = "1";
+  list.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-move-folder]");
+    if (!btn) return;
+    renderMovePicker(decodeURIComponent(btn.getAttribute("data-move-folder") || ""));
+  });
+  up.addEventListener("click", () => {
+    const parent = moveParentPrefix(movePickerPrefix);
+    if (parent) renderMovePicker(parent);
+  });
+  here.addEventListener("click", () => {
+    const reason = moveDestinationError(moveSourceKey, movePickerPrefix, currentUserId);
+    if (reason) {
+      if (error) error.textContent = reason;
+      return;
+    }
+    performMove(moveSourceKey, movePickerPrefix);
+  });
+  cancel.addEventListener("click", closeMovePicker);
+  root.addEventListener("click", (event) => {
+    if (event.target === root) closeMovePicker();
+  });
+}
+
+bindMovePicker();
+
 // ── Create Folder ─────────────────────────────────────────────────────────────
 window.handleCreateFolder = async function () {
   if (currentTab === "shared") return;
@@ -1924,6 +2071,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
       const folderItems = [];
       if (!downloadMode && showFolderRenameButton(currentTab, f.key, currentUserId)) folderItems.push("Rename");
       if (!downloadMode && showShareWithAll(currentTab, f.key, currentUserId, { hasFiles: f.hasFiles, hasSubFolders: f.hasSubFolders })) folderItems.push("Share on DLIV");
+      if (!downloadMode && canMoveLibraryItem(currentTab, f.key, currentUserId)) folderItems.push("Move");
       if (!f.hasSubFolders && f.hasFiles) folderItems.push("Empty");
       else if (!f.hasSubFolders && !reserved) folderItems.push("Remove");
       const folderMenu = folderItems.length
@@ -1932,6 +2080,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
             <div class="file-menu-list" data-key="${folderEnc}" hidden>
               ${folderItems.includes("Rename") ? `<button type="button" onclick="renameFolderFromMenu('${folderEnc}')">Rename</button>` : ""}
               ${folderItems.includes("Share on DLIV") ? `<button type="button" onclick="shareWithAllFromMenu('${folderEnc}')">Share on DLIV</button>` : ""}
+              ${folderItems.includes("Move") ? `<button type="button" onclick="moveFromMenu('${folderEnc}')">Move</button>` : ""}
               ${folderItems.includes("Empty") ? `<button type="button" onclick="emptyFolderFromMenu('${folderEnc}','${encodeURIComponent(name)}')">Empty</button>` : ""}
               ${folderItems.includes("Remove") ? `<button type="button" onclick="removeFolderFromMenu('${folderEnc}','${encodeURIComponent(name)}')">Remove</button>` : ""}
             </div>
@@ -1971,7 +2120,10 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
         canEdit,
         canShare: showShareWithAll(currentTab, f.key, currentUserId),
         canRename: currentTab !== "shared",
-      }) : (!downloadMode && !videoCombineMode && currentTab !== "shared" ? ["Rename"] : []);
+        canMove: canMoveLibraryItem(currentTab, f.key, currentUserId),
+      }) : (!downloadMode && !videoCombineMode && currentTab !== "shared"
+        ? (canMoveLibraryItem(currentTab, f.key, currentUserId) ? ["Rename", "Move"] : ["Rename"])
+        : []);
       const fileMenu = menuItems.length
         ? `<div class="file-menu">
             <button type="button" class="file-menu-toggle" aria-haspopup="true" aria-expanded="false" aria-label="File" onclick="toggleFileMenu(event, '${enc}')">⋯</button>
@@ -1980,6 +2132,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
               ${menuItems.includes("Rename") ? `<button type="button" onclick="renameFromMenu('${enc}')">Rename</button>` : ""}
               ${menuItems.includes("Combine") ? `<button type="button" onclick="startCombineWith('${enc}')">Combine</button>` : ""}
               ${menuItems.includes("Share on DLIV") ? `<button type="button" onclick="shareWithAllFromMenu('${enc}')">Share on DLIV</button>` : ""}
+              ${menuItems.includes("Move") ? `<button type="button" onclick="moveFromMenu('${enc}')">Move</button>` : ""}
               ${menuItems.includes("Remove") ? `<button type="button" onclick="removeFromMenu('${enc}','${encodeURIComponent(name)}')">Remove</button>` : ""}
             </div>
           </div>`

@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   LIBRARY_FOLDER_NAMES,
+  canMoveLibraryItem,
   canRenameLibraryKey,
   compareLibraryFolders,
   isReservedLibraryFolder,
@@ -11,6 +12,7 @@ import {
   mineLibraryKey,
   mineLibraryKeys,
   mineRootPrefix,
+  moveDestinationError,
   showFileUploadButton,
   showFolderRenameButton,
   showLibraryAddMenu,
@@ -146,6 +148,25 @@ test("Music and Photos use the Add menu and a hover file menu like Videos", () =
   }), ["Rename", "Share on DLIV", "Remove"]);
   assert.equal(showStandaloneFolderButton("mine", music, sub, true), false);
   assert.equal(showStandaloneFolderButton("shared", "Music/", sub, true), false);
+});
+
+test("Move stays inside the user library and leaves Music, Photos, and Videos in place", () => {
+  const home = mineRootPrefix(sub);
+  const videos = mineLibraryKey(sub, "Videos/");
+  const folder = `${videos}TaylorsGang/`;
+  const file = `${folder}clip.mp4`;
+  assert.equal(canMoveLibraryItem("mine", file, sub), true);
+  assert.equal(canMoveLibraryItem("mine", folder, sub), true);
+  assert.equal(canMoveLibraryItem("mine", videos, sub), false);
+  assert.equal(canMoveLibraryItem("mine", `${home}Notes/`, sub), true);
+  assert.equal(canMoveLibraryItem("shared", file, sub), false);
+  assert.equal(moveDestinationError(file, `${home}Photos/Trip/`, sub), "");
+  assert.equal(moveDestinationError(file, folder, sub), "Already in this folder.");
+  assert.equal(moveDestinationError(folder, `${folder}Inside/`, sub), "Choose a folder that is not inside this one.");
+  assert.equal(moveDestinationError("Videos/clip.mp4", home, sub), "Move files and folders from your library.");
+  assert.deepEqual(libraryFileMenuItems({
+    library: "Videos", convertOn: false, isMp4: false, downloadMode: false, combineMode: false, canEdit: false, canMove: true,
+  }), ["Rename", "Move", "Remove"]);
 });
 
 test("a converted video stays in the Videos folder it was uploaded from", () => {

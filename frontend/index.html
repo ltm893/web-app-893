@@ -203,6 +203,22 @@
     #name-prompt-actions button { font-size: 0.82rem; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; border: 1.5px solid #1e3a5f; }
     #name-prompt-ok { background: #1e3a5f; color: white; }
     #name-prompt-cancel { background: transparent; color: #1e3a5f; }
+    #move-picker { position: fixed; inset: 0; z-index: 1400; background: rgba(0,0,0,0.45); display: flex; align-items: flex-start; justify-content: center; padding: 10vh 1rem 1rem; }
+    #move-picker[hidden] { display: none; }
+    #move-picker-box { background: white; border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 420px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+    #move-picker-box h3 { margin: 0 0 0.35rem; color: #1e3a5f; font-size: 1rem; }
+    #move-picker-where { margin: 0 0 0.75rem; font-size: 0.82rem; color: #64748b; }
+    #move-picker-up { margin: 0 0 0.5rem; }
+    #move-picker-list { list-style: none; margin: 0; padding: 0; max-height: 40vh; overflow: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
+    #move-picker-list li { margin: 0; border-bottom: 1px solid #eef2f6; }
+    #move-picker-list li:last-child { border-bottom: none; }
+    #move-picker-list button { display: block; width: 100%; text-align: left; background: transparent; border: none; color: #1e3a5f; padding: 0.55rem 0.75rem; font-size: 16px; cursor: pointer; }
+    #move-picker-list .move-picker-empty { margin: 0; padding: 0.7rem 0.75rem; color: #64748b; font-size: 0.85rem; }
+    #move-picker-error { min-height: 1.1rem; margin: 0.45rem 0 0; font-size: 0.8rem; color: #e11d48; }
+    #move-picker-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+    #move-picker-actions button { font-size: 0.82rem; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; border: 1.5px solid #1e3a5f; }
+    #move-picker-here { background: #1e3a5f; color: white; }
+    #move-picker-cancel { background: transparent; color: #1e3a5f; }
 
     .tab-bar { display: flex; align-items: flex-end; gap: 3px; margin-top: 0.75rem; margin-bottom: 0; border-bottom: 2px solid #1e3a5f; flex-wrap: nowrap; overflow-x: auto; }
     .tab-btn { margin-top: 0 !important; border-radius: 7px 7px 0 0 !important; border: 2px solid #1e3a5f !important; border-bottom: none !important; background: #c8d8e8 !important; color: #1e3a5f !important; font-size: 0.82rem; font-weight: 600; font-family: Arial, sans-serif; padding: 0.35rem 1.25rem 0.45rem !important; cursor: pointer; position: relative; bottom: -2px; transition: background 0.15s, color 0.15s, padding 0.1s; white-space: nowrap; flex-shrink: 0; }
@@ -1017,6 +1033,20 @@
         <button type="button" id="name-prompt-cancel">Cancel</button>
       </div>
     </form>
+  </div>
+
+  <div id="move-picker" hidden role="dialog" aria-modal="true" aria-labelledby="move-picker-title">
+    <div id="move-picker-box">
+      <h3 id="move-picker-title">Move</h3>
+      <p id="move-picker-where"></p>
+      <button type="button" id="move-picker-up">↑ Up</button>
+      <ul id="move-picker-list"></ul>
+      <p id="move-picker-error" role="alert"></p>
+      <div id="move-picker-actions">
+        <button type="button" id="move-picker-here">Move here</button>
+        <button type="button" id="move-picker-cancel">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <div id="video-edit-modal" hidden role="dialog" aria-modal="true" aria-labelledby="video-edit-title">

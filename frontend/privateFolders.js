@@ -148,7 +148,7 @@ export function videosFileMenuItems({ convertOn, isMp4, downloadMode, combineMod
   });
 }
 
-export function libraryFileMenuItems({ library, convertOn, isMp4, downloadMode, combineMode, canEdit, canShare, canRename = true }) {
+export function libraryFileMenuItems({ library, convertOn, isMp4, downloadMode, combineMode, canEdit, canShare, canRename = true, canMove = false }) {
   if (downloadMode || combineMode) return [];
   if (!library) return [];
   const items = [];
@@ -158,6 +158,7 @@ export function libraryFileMenuItems({ library, convertOn, isMp4, downloadMode, 
     items.push("Combine");
   }
   if (canShare) items.push("Share on DLIV");
+  if (canMove) items.push("Move");
   items.push("Remove");
   return items;
 }
@@ -193,6 +194,33 @@ export function jobMusicFolderLabel(who, userId, job) {
 }
 
 const RENAMEABLE_LIBRARY_FOLDERS = ["Music/", "Photos/"];
+
+export function canMoveLibraryItem(tab, key, userId) {
+  if (tab !== "mine" || !userId) return false;
+  const raw = String(key || "").replace(/^\/+/, "");
+  const home = mineRootPrefix(userId);
+  if (!raw || !raw.startsWith(home) || raw === home) return false;
+  if (raw.endsWith("/") && isReservedLibraryFolder("mine", raw, userId)) return false;
+  return true;
+}
+
+export function moveDestinationError(fromKey, destPrefix, userId) {
+  const raw = String(fromKey || "").replace(/^\/+/, "");
+  const home = mineRootPrefix(userId);
+  let dest = String(destPrefix || "").replace(/^\/+/, "").trim();
+  if (!home || !raw.startsWith(home)) return "Move files and folders from your library.";
+  if (!dest) return "Choose a folder in your library.";
+  if (!dest.endsWith("/")) dest += "/";
+  if (!dest.startsWith(home) || dest.split("/").some((part) => part === "." || part === "..")) {
+    return "Choose a folder in your library.";
+  }
+  const folder = raw.endsWith("/");
+  if (folder && (dest === raw || dest.startsWith(raw))) return "Choose a folder that is not inside this one.";
+  const base = raw.split("/").filter(Boolean).pop() || "";
+  const destKey = folder ? `${dest}${base}/` : `${dest}${base}`;
+  if (destKey === raw) return "Already in this folder.";
+  return "";
+}
 
 export function canRenameLibraryKey(key) {
   return String(key || "").replace(/^\/+/, "").startsWith("users/");
