@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   LIBRARY_FOLDER_NAMES,
+  canRenameLibraryKey,
   compareLibraryFolders,
   isReservedLibraryFolder,
   libraryAddMenuItems,
@@ -70,7 +71,8 @@ test("Videos has Upload Video but not + File; Music and Photos have + File only"
   assert.equal(showFileUploadButton("mine", music, sub), true);
   assert.equal(showVideoUploadButton("mine", music, sub, true), false);
   assert.equal(showVideoUploadButton("video", root, sub, true), true);
-  assert.equal(showFileUploadButton("shared", "", sub), true);
+  assert.equal(showFileUploadButton("shared", "", sub), false);
+  assert.equal(showFileUploadButton("shared", "Photos/Family/", sub), false);
   assert.equal(showVideoUploadButton("shared", "Videos/", sub, true), false);
   assert.equal(showVideoEditControls("mine", videos, sub, true), true);
   assert.equal(showVideoEditControls("mine", `${videos}clips/`, sub, true), true);
@@ -101,10 +103,14 @@ test("Music and Photos use the Add menu and a hover file menu like Videos", () =
   assert.equal(listingLibrary("mine", mineRootPrefix(sub), sub), "");
   assert.equal(showLibraryAddMenu("mine", music, sub, true), true);
   assert.equal(showLibraryAddMenu("mine", photos, sub, false), true);
-  assert.equal(showLibraryAddMenu("shared", "Photos/Family/", sub, true), true);
+  assert.equal(showLibraryAddMenu("shared", "Photos/Family/", sub, true), false);
+  assert.equal(showLibraryAddMenu("shared", "Music/", sub, true), false);
+  assert.equal(showLibraryAddMenu("shared", "Videos/", sub, true), false);
   assert.equal(showLibraryAddMenu("mine", videos, sub, false), true);
   assert.deepEqual(libraryAddMenuItems("mine", videos, sub, false).map((item) => item.label), ["Folder"]);
-  assert.deepEqual(libraryAddMenuItems("shared", "", sub, true).map((item) => item.label), ["File", "Folder"]);
+  assert.deepEqual(libraryAddMenuItems("shared", "", sub, true).map((item) => item.label), []);
+  assert.deepEqual(libraryAddMenuItems("shared", "Photos/Family/", sub, true).map((item) => item.label), []);
+  assert.deepEqual(libraryAddMenuItems("shared", "Videos/", sub, true).map((item) => item.label), []);
   assert.deepEqual(libraryAddMenuItems("mine", mineRootPrefix(sub), sub, true).map((item) => item.label), ["Folder"]);
   assert.equal(showStandaloneFolderButton("shared", "", sub, true), false);
   assert.equal(showStandaloneFolderButton("mine", mineRootPrefix(sub), sub, true), false);
@@ -123,17 +129,20 @@ test("Music and Photos use the Add menu and a hover file menu like Videos", () =
     library: "Photos", convertOn: true, isMp4: false, downloadMode: false, combineMode: false, canEdit: false,
   }), ["Rename", "Remove"]);
   assert.equal(showShareWithAll("mine", `${videos}clip.mp4`, sub), true);
-  assert.equal(showShareWithAll("mine", `${photos}Florence/`, sub), true);
+  assert.equal(showShareWithAll("mine", `${photos}Florence/`, sub, { hasFiles: true, hasSubFolders: false }), true);
+  assert.equal(showShareWithAll("mine", `${photos}Florence/`, sub, { hasFiles: true, hasSubFolders: true }), false);
+  assert.equal(showShareWithAll("mine", `${photos}Florence/`, sub, { hasFiles: false, hasSubFolders: false }), false);
+  assert.equal(showShareWithAll("mine", `${photos}Reunion/`, sub, { hasFiles: false, hasSubFolders: true }), false);
   assert.equal(showShareWithAll("mine", `${music}1973/track.mp3`, sub), true);
   assert.equal(showShareWithAll("mine", videos, sub), false);
   assert.equal(showShareWithAll("shared", "Videos/clip.mp4", sub), false);
   assert.equal(showShareWithAll("mine", `${mineRootPrefix(sub)}notes.txt`, sub), false);
   assert.deepEqual(libraryFileMenuItems({
     library: "Videos", convertOn: true, isMp4: true, downloadMode: false, combineMode: false, canEdit: true, canShare: true,
-  }), ["Clip", "Rename", "Combine", "All DLIV users", "Remove"]);
+  }), ["Clip", "Rename", "Combine", "Share on DLIV", "Remove"]);
   assert.deepEqual(libraryFileMenuItems({
     library: "Music", convertOn: true, isMp4: false, downloadMode: false, combineMode: false, canEdit: false, canShare: true,
-  }), ["Rename", "All DLIV users", "Remove"]);
+  }), ["Rename", "Share on DLIV", "Remove"]);
   assert.equal(showStandaloneFolderButton("mine", music, sub, true), false);
   assert.equal(showStandaloneFolderButton("shared", "Music/", sub, true), false);
 });
@@ -173,10 +182,18 @@ test("Music and Photos album folders can be renamed; library roots cannot", () =
   assert.equal(showFolderRenameButton("mine", photos, sub), false);
   assert.equal(showFolderRenameButton("mine", `${photos}Barlieb RESZ/`, sub), true);
   assert.equal(showFolderRenameButton("mine", `${photos}GETZ pics/Barlieb/`, sub), true);
-  assert.equal(showFolderRenameButton("shared", "Music/CD20261001-1/", sub), true);
-  assert.equal(showFolderRenameButton("shared", "Photos/Family/", sub), true);
+  assert.equal(showFolderRenameButton("shared", "Music/CD20261001-1/", sub), false);
+  assert.equal(showFolderRenameButton("shared", "Photos/Family/", sub), false);
+  assert.equal(showFolderRenameButton("shared", "Photos/Wenner2026/Florence/", sub), false);
+  assert.equal(showFolderRenameButton("shared", "Videos/Wenner2026/Camping/", sub), false);
   assert.equal(showFolderRenameButton("shared", "Photos/", sub), false);
   assert.equal(showFolderRenameButton("mine", `${videos}clips/`, sub), false);
+  assert.equal(canRenameLibraryKey(`${photos}Family/pic.jpg`), true);
+  assert.equal(canRenameLibraryKey("Photos/Wenner2026/Family/pic.jpg"), false);
+  assert.equal(canRenameLibraryKey("Videos/clip.mp4"), false);
+  assert.deepEqual(libraryFileMenuItems({
+    library: "Photos", convertOn: false, isMp4: false, downloadMode: false, combineMode: false, canEdit: false, canRename: false,
+  }), ["Remove"]);
 });
 
 test("library folders sort first as Music, Photos, Videos", () => {

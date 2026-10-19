@@ -29,6 +29,7 @@ import {
   libraryFileMenuItems,
   listingLibrary,
   showFileUploadButton,
+  canRenameLibraryKey,
   showFolderRenameButton,
   showLibraryAddMenu,
   showLibraryFileMenu,
@@ -44,8 +45,7 @@ import { formatFileSize, formatMediaLength, isPlayableAudioKey, isPlayableVideoK
 let currentPrefix = "";
 let currentUserId = null;
 let currentUserLabel = "Mine";
-let currentTab = "shared";
-let currentUserIdentifiers = [];
+let currentTab = "mine";
 let filesLoadGen = 0;
 const mediaLengthCache = new Map();
 const renamedOutputKeys = new Map();
@@ -80,21 +80,6 @@ async function withListOpProgress(label, work) {
 
 async function reloadFilesAfterOp() {
   await loadFiles(currentPrefix, { keepVisibleList: true });
-}
-
-const focusSetUsers = [
-  "Wenner2026@gmail.com",
-];
-
-function identifiersFromToken(payload) {
-  return [payload.sub, payload.email, payload["cognito:username"]]
-    .filter(Boolean)
-    .map((id) => String(id).toLowerCase());
-}
-
-function isFocusSetUser() {
-  const set = new Set(focusSetUsers.map((u) => u.toLowerCase()));
-  return currentUserIdentifiers.some((id) => set.has(id));
 }
 
 function isReservedSharedTopFolder(folderKey) {
@@ -226,13 +211,12 @@ async function showFileBrowser() {
     const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
     currentUserId    = payload.sub;
     currentUserLabel = displayNameFromToken(payload);
-    currentUserIdentifiers = identifiersFromToken(payload);
   } catch {
     handleSessionExpired();
     return;
   }
 
-  currentTab = isFocusSetUser() ? "mine" : "shared";
+  currentTab = "mine";
   currentPrefix = currentTab === "mine" ? mineRootPrefix(currentUserId) : "";
   await syncVideoConvertUi();
   updateTabUI();
@@ -325,8 +309,7 @@ function updateTabUI() {
   const slidesBtn = document.getElementById("tab-btn-slideshows");
   const tabBar    = sharedBtn?.parentElement;
   if (tabBar && mineBtn && sharedBtn) {
-    if (isFocusSetUser()) tabBar.insertBefore(mineBtn, sharedBtn);
-    else tabBar.insertBefore(sharedBtn, mineBtn);
+    tabBar.insertBefore(mineBtn, sharedBtn);
     if (videoBtn) tabBar.appendChild(videoBtn);
     if (slidesBtn) tabBar.appendChild(slidesBtn);
   }
@@ -401,7 +384,7 @@ async function syncVideoConvertUi() {
   const tab = document.getElementById("tab-btn-video");
   if (tab) tab.hidden = !videoConvertOn;
   if (!videoConvertOn && currentTab === "video") {
-    currentTab = isFocusSetUser() ? "mine" : "shared";
+    currentTab = "mine";
   }
   updateTabUI();
   return videoConvertOn;
@@ -779,9 +762,10 @@ function jobOutputFolderAction(job) {
 
 window.renamePrivateFile = async function (encodedKey) {
   const fromKey = decodeURIComponent(encodedKey || "");
+  if (!canRenameLibraryKey(fromKey)) return;
   if (isFolderKey(fromKey)) return window.renamePrivateFolder(encodedKey);
   const currentName = fromKey.split("/").pop() || "";
-  const typed = prompt("New file name", currentName);
+  const typed = await askTypedName("New file name", currentName);
   if (typed == null) return;
   await runPrivateRename(fromKey, typed);
 };
@@ -789,8 +773,9 @@ window.renamePrivateFile = async function (encodedKey) {
 window.renamePrivateFolder = async function (encodedKey) {
   let fromKey = decodeURIComponent(encodedKey || "");
   if (fromKey && !fromKey.endsWith("/")) fromKey += "/";
+  if (!canRenameLibraryKey(fromKey)) return;
   const currentName = folderNameFromKey(fromKey);
-  const typed = prompt("New folder name", currentName);
+  const typed = await askTypedName("New folder name", currentName);
   if (typed == null) return;
   await runPrivateRename(fromKey, typed);
 };
@@ -1297,8 +1282,8 @@ window.shareWithAllDliv = async function (encodedKey) {
   const folder = isFolderKey(key);
   const name = folder ? folderNameFromKey(key) : fileNameFromKey(key);
   const message = folder
-    ? `Make "${name}" available to all DLIV users? Every file in this folder is copied. Your folder stays here.`
-    : `Make "${name}" available to all DLIV users? Your copy stays in this folder.`;
+    ? `Make "${name}" available to all DLIV users? Every file in this folder is copied into a folder with your name. Your folder stays here.`
+    : `Make "${name}" available to all DLIV users? It is copied into a folder with your name. Your copy stays in this folder.`;
   if (!confirm(message)) return;
   if (!(await ensureSignedIn())) { handleSessionExpired(); return; }
   await withListOpProgress("Sharing", async () => {
@@ -1694,9 +1679,81 @@ window.handleUpload = async function (overrideFile = null) {
   }
 };
 
+// iPhone's native prompt applies the highlighted keyboard suggestion on OK.
+let namePromptResolve = null;
+
+function finishNamePrompt(value) {
+  const resolve = namePromptResolve;
+  namePromptResolve = null;
+  const root = document.getElementById("name-prompt");
+  if (root) root.hidden = true;
+  if (resolve) resolve(value);
+}
+
+function askTypedName(title, initial = "") {
+  const root = document.getElementById("name-prompt");
+  const input = document.getElementById("name-prompt-input");
+  const heading = document.getElementById("name-prompt-title");
+  if (!root || !input || !heading) return Promise.resolve(prompt(title, initial));
+  if (namePromptResolve) finishNamePrompt(null);
+  heading.textContent = title;
+  input.value = initial;
+  root.hidden = false;
+  input.focus();
+  const end = input.value.length;
+  input.setSelectionRange(end, end);
+  return new Promise((resolve) => {
+    namePromptResolve = resolve;
+  });
+}
+
+function bindNamePrompt() {
+  const root = document.getElementById("name-prompt");
+  const box = document.getElementById("name-prompt-box");
+  const input = document.getElementById("name-prompt-input");
+  const ok = document.getElementById("name-prompt-ok");
+  const cancel = document.getElementById("name-prompt-cancel");
+  if (!root || !box || !input || !ok || !cancel || root.dataset.bound === "1") return;
+  root.dataset.bound = "1";
+  let typedBeforeBlur = null;
+  ok.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    typedBeforeBlur = input.value;
+  });
+  ok.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const value = typedBeforeBlur == null ? input.value : typedBeforeBlur;
+    typedBeforeBlur = null;
+    finishNamePrompt(value);
+  });
+  cancel.addEventListener("click", () => finishNamePrompt(null));
+  root.addEventListener("click", (event) => {
+    if (event.target === root) finishNamePrompt(null);
+  });
+  box.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const value = typedBeforeBlur == null ? input.value : typedBeforeBlur;
+    typedBeforeBlur = null;
+    finishNamePrompt(value);
+  });
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      finishNamePrompt(null);
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      finishNamePrompt(input.value);
+    }
+  });
+}
+
+bindNamePrompt();
+
 // ── Create Folder ─────────────────────────────────────────────────────────────
 window.handleCreateFolder = async function () {
-  const raw = prompt("New folder name:");
+  if (currentTab === "shared") return;
+  const raw = await askTypedName("New folder name");
   if (raw === null) return;
   const name = raw.trim().replace(/\/+/g, "");
   if (!name) { alert("Folder name cannot be empty."); return; }
@@ -1859,7 +1916,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
       const folderEnc = encodeURIComponent(f.key);
       const folderItems = [];
       if (!downloadMode && showFolderRenameButton(currentTab, f.key, currentUserId)) folderItems.push("Rename");
-      if (!downloadMode && showShareWithAll(currentTab, f.key, currentUserId)) folderItems.push("All DLIV users");
+      if (!downloadMode && showShareWithAll(currentTab, f.key, currentUserId, { hasFiles: f.hasFiles, hasSubFolders: f.hasSubFolders })) folderItems.push("Share on DLIV");
       if (!f.hasSubFolders && f.hasFiles) folderItems.push("Empty");
       else if (!f.hasSubFolders && !reserved) folderItems.push("Remove");
       const folderMenu = folderItems.length
@@ -1867,7 +1924,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
             <button type="button" class="file-menu-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Folder" onclick="toggleFileMenu(event, '${folderEnc}')">⋯</button>
             <div class="file-menu-list" data-key="${folderEnc}" hidden>
               ${folderItems.includes("Rename") ? `<button type="button" onclick="renameFolderFromMenu('${folderEnc}')">Rename</button>` : ""}
-              ${folderItems.includes("All DLIV users") ? `<button type="button" onclick="shareWithAllFromMenu('${folderEnc}')">All DLIV users</button>` : ""}
+              ${folderItems.includes("Share on DLIV") ? `<button type="button" onclick="shareWithAllFromMenu('${folderEnc}')">Share on DLIV</button>` : ""}
               ${folderItems.includes("Empty") ? `<button type="button" onclick="emptyFolderFromMenu('${folderEnc}','${encodeURIComponent(name)}')">Empty</button>` : ""}
               ${folderItems.includes("Remove") ? `<button type="button" onclick="removeFolderFromMenu('${folderEnc}','${encodeURIComponent(name)}')">Remove</button>` : ""}
             </div>
@@ -1906,7 +1963,8 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
         combineMode: videoCombineMode,
         canEdit,
         canShare: showShareWithAll(currentTab, f.key, currentUserId),
-      }) : (!downloadMode && !videoCombineMode ? ["Rename"] : []);
+        canRename: currentTab !== "shared",
+      }) : (!downloadMode && !videoCombineMode && currentTab !== "shared" ? ["Rename"] : []);
       const fileMenu = menuItems.length
         ? `<div class="file-menu">
             <button type="button" class="file-menu-toggle" aria-haspopup="true" aria-expanded="false" aria-label="File" onclick="toggleFileMenu(event, '${enc}')">⋯</button>
@@ -1914,7 +1972,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
               ${menuItems.includes("Clip") ? `<button type="button" onclick="openClipFromMenu('${enc}')">Clip</button>` : ""}
               ${menuItems.includes("Rename") ? `<button type="button" onclick="renameFromMenu('${enc}')">Rename</button>` : ""}
               ${menuItems.includes("Combine") ? `<button type="button" onclick="startCombineWith('${enc}')">Combine</button>` : ""}
-              ${menuItems.includes("All DLIV users") ? `<button type="button" onclick="shareWithAllFromMenu('${enc}')">All DLIV users</button>` : ""}
+              ${menuItems.includes("Share on DLIV") ? `<button type="button" onclick="shareWithAllFromMenu('${enc}')">Share on DLIV</button>` : ""}
               ${menuItems.includes("Remove") ? `<button type="button" onclick="removeFromMenu('${enc}','${encodeURIComponent(name)}')">Remove</button>` : ""}
             </div>
           </div>`
