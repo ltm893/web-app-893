@@ -114,10 +114,13 @@ export function showLibraryFileMenu(tab, prefix, userId) {
   return listingLibrary(tab, prefix, userId) !== "";
 }
 
-export function showShareWithAll(tab, key, userId) {
+export function showShareWithAll(tab, key, userId, folderInfo) {
   if (tab !== "mine" || !userId) return false;
   const raw = String(key || "").replace(/^\/+/, "");
   if (!raw || isReservedLibraryFolder(tab, raw, userId)) return false;
+  if (raw.endsWith("/")) {
+    if (!folderInfo || folderInfo.hasSubFolders || !folderInfo.hasFiles) return false;
+  }
   const asPrefix = raw.endsWith("/") ? raw : raw.slice(0, raw.lastIndexOf("/") + 1);
   return listingLibrary(tab, asPrefix, userId) !== "";
 }

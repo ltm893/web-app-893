@@ -1860,7 +1860,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
       const folderEnc = encodeURIComponent(f.key);
       const folderItems = [];
       if (!downloadMode && showFolderRenameButton(currentTab, f.key, currentUserId)) folderItems.push("Rename");
-      if (!downloadMode && showShareWithAll(currentTab, f.key, currentUserId)) folderItems.push("All DLIV users");
+      if (!downloadMode && showShareWithAll(currentTab, f.key, currentUserId, { hasFiles: f.hasFiles, hasSubFolders: f.hasSubFolders })) folderItems.push("All DLIV users");
       if (!f.hasSubFolders && f.hasFiles) folderItems.push("Empty");
       else if (!f.hasSubFolders && !reserved) folderItems.push("Remove");
       const folderMenu = folderItems.length

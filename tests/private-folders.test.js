@@ -128,7 +128,10 @@ test("Music and Photos use the Add menu and a hover file menu like Videos", () =
     library: "Photos", convertOn: true, isMp4: false, downloadMode: false, combineMode: false, canEdit: false,
   }), ["Rename", "Remove"]);
   assert.equal(showShareWithAll("mine", `${videos}clip.mp4`, sub), true);
-  assert.equal(showShareWithAll("mine", `${photos}Florence/`, sub), true);
+  assert.equal(showShareWithAll("mine", `${photos}Florence/`, sub, { hasFiles: true, hasSubFolders: false }), true);
+  assert.equal(showShareWithAll("mine", `${photos}Florence/`, sub, { hasFiles: true, hasSubFolders: true }), false);
+  assert.equal(showShareWithAll("mine", `${photos}Florence/`, sub, { hasFiles: false, hasSubFolders: false }), false);
+  assert.equal(showShareWithAll("mine", `${photos}Reunion/`, sub, { hasFiles: false, hasSubFolders: true }), false);
   assert.equal(showShareWithAll("mine", `${music}1973/track.mp3`, sub), true);
   assert.equal(showShareWithAll("mine", videos, sub), false);
   assert.equal(showShareWithAll("shared", "Videos/clip.mp4", sub), false);
