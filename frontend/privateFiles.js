@@ -1860,7 +1860,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
       const folderEnc = encodeURIComponent(f.key);
       const folderItems = [];
       if (!downloadMode && showFolderRenameButton(currentTab, f.key, currentUserId)) folderItems.push("Rename");
-      if (!downloadMode && showShareWithAll(currentTab, f.key, currentUserId, { hasFiles: f.hasFiles, hasSubFolders: f.hasSubFolders })) folderItems.push("All DLIV users");
+      if (!downloadMode && showShareWithAll(currentTab, f.key, currentUserId, { hasFiles: f.hasFiles, hasSubFolders: f.hasSubFolders })) folderItems.push("Share on DLIV");
       if (!f.hasSubFolders && f.hasFiles) folderItems.push("Empty");
       else if (!f.hasSubFolders && !reserved) folderItems.push("Remove");
       const folderMenu = folderItems.length
@@ -1868,7 +1868,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
             <button type="button" class="file-menu-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Folder" onclick="toggleFileMenu(event, '${folderEnc}')">⋯</button>
             <div class="file-menu-list" data-key="${folderEnc}" hidden>
               ${folderItems.includes("Rename") ? `<button type="button" onclick="renameFolderFromMenu('${folderEnc}')">Rename</button>` : ""}
-              ${folderItems.includes("All DLIV users") ? `<button type="button" onclick="shareWithAllFromMenu('${folderEnc}')">All DLIV users</button>` : ""}
+              ${folderItems.includes("Share on DLIV") ? `<button type="button" onclick="shareWithAllFromMenu('${folderEnc}')">Share on DLIV</button>` : ""}
               ${folderItems.includes("Empty") ? `<button type="button" onclick="emptyFolderFromMenu('${folderEnc}','${encodeURIComponent(name)}')">Empty</button>` : ""}
               ${folderItems.includes("Remove") ? `<button type="button" onclick="removeFolderFromMenu('${folderEnc}','${encodeURIComponent(name)}')">Remove</button>` : ""}
             </div>
@@ -1915,7 +1915,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
               ${menuItems.includes("Clip") ? `<button type="button" onclick="openClipFromMenu('${enc}')">Clip</button>` : ""}
               ${menuItems.includes("Rename") ? `<button type="button" onclick="renameFromMenu('${enc}')">Rename</button>` : ""}
               ${menuItems.includes("Combine") ? `<button type="button" onclick="startCombineWith('${enc}')">Combine</button>` : ""}
-              ${menuItems.includes("All DLIV users") ? `<button type="button" onclick="shareWithAllFromMenu('${enc}')">All DLIV users</button>` : ""}
+              ${menuItems.includes("Share on DLIV") ? `<button type="button" onclick="shareWithAllFromMenu('${enc}')">Share on DLIV</button>` : ""}
               ${menuItems.includes("Remove") ? `<button type="button" onclick="removeFromMenu('${enc}','${encodeURIComponent(name)}')">Remove</button>` : ""}
             </div>
           </div>`

@@ -138,10 +138,10 @@ test("Music and Photos use the Add menu and a hover file menu like Videos", () =
   assert.equal(showShareWithAll("mine", `${mineRootPrefix(sub)}notes.txt`, sub), false);
   assert.deepEqual(libraryFileMenuItems({
     library: "Videos", convertOn: true, isMp4: true, downloadMode: false, combineMode: false, canEdit: true, canShare: true,
-  }), ["Clip", "Rename", "Combine", "All DLIV users", "Remove"]);
+  }), ["Clip", "Rename", "Combine", "Share on DLIV", "Remove"]);
   assert.deepEqual(libraryFileMenuItems({
     library: "Music", convertOn: true, isMp4: false, downloadMode: false, combineMode: false, canEdit: false, canShare: true,
-  }), ["Rename", "All DLIV users", "Remove"]);
+  }), ["Rename", "Share on DLIV", "Remove"]);
   assert.equal(showStandaloneFolderButton("mine", music, sub, true), false);
   assert.equal(showStandaloneFolderButton("shared", "Music/", sub, true), false);
 });

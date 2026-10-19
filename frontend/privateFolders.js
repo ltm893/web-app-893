@@ -149,7 +149,7 @@ export function libraryFileMenuItems({ library, convertOn, isMp4, downloadMode, 
     items.unshift("Clip");
     items.push("Combine");
   }
-  if (canShare) items.push("All DLIV users");
+  if (canShare) items.push("Share on DLIV");
   items.push("Remove");
   return items;
 }
