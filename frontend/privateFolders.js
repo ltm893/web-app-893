@@ -53,6 +53,7 @@ export function isMineRootListing(tab, prefix, userId) {
 }
 
 export function showFileUploadButton(tab, prefix, userId) {
+  if (tab === "shared") return false;
   if (isMineRootListing(tab, prefix, userId)) return false;
   if (isUnderMineLibrary(tab, prefix, userId, "Videos/")) return false;
   return true;
@@ -73,6 +74,7 @@ export function showVideosAddMenu(tab, prefix, userId, videoConvertOn) {
 }
 
 export function libraryAddMenuItems(tab, prefix, userId, videoConvertOn) {
+  if (tab === "shared") return [];
   const library = listingLibrary(tab, prefix, userId);
   if (library === "Videos" && showVideosAddMenu(tab, prefix, userId, videoConvertOn)) {
     return [
@@ -121,6 +123,7 @@ export function showShareWithAll(tab, key, userId) {
 }
 
 export function showStandaloneFolderButton(tab, prefix, userId, videoConvertOn) {
+  if (tab === "shared") return false;
   return !showLibraryAddMenu(tab, prefix, userId, videoConvertOn);
 }
 

@@ -70,7 +70,8 @@ test("Videos has Upload Video but not + File; Music and Photos have + File only"
   assert.equal(showFileUploadButton("mine", music, sub), true);
   assert.equal(showVideoUploadButton("mine", music, sub, true), false);
   assert.equal(showVideoUploadButton("video", root, sub, true), true);
-  assert.equal(showFileUploadButton("shared", "", sub), true);
+  assert.equal(showFileUploadButton("shared", "", sub), false);
+  assert.equal(showFileUploadButton("shared", "Photos/Family/", sub), false);
   assert.equal(showVideoUploadButton("shared", "Videos/", sub, true), false);
   assert.equal(showVideoEditControls("mine", videos, sub, true), true);
   assert.equal(showVideoEditControls("mine", `${videos}clips/`, sub, true), true);
@@ -101,10 +102,14 @@ test("Music and Photos use the Add menu and a hover file menu like Videos", () =
   assert.equal(listingLibrary("mine", mineRootPrefix(sub), sub), "");
   assert.equal(showLibraryAddMenu("mine", music, sub, true), true);
   assert.equal(showLibraryAddMenu("mine", photos, sub, false), true);
-  assert.equal(showLibraryAddMenu("shared", "Photos/Family/", sub, true), true);
+  assert.equal(showLibraryAddMenu("shared", "Photos/Family/", sub, true), false);
+  assert.equal(showLibraryAddMenu("shared", "Music/", sub, true), false);
+  assert.equal(showLibraryAddMenu("shared", "Videos/", sub, true), false);
   assert.equal(showLibraryAddMenu("mine", videos, sub, false), true);
   assert.deepEqual(libraryAddMenuItems("mine", videos, sub, false).map((item) => item.label), ["Folder"]);
-  assert.deepEqual(libraryAddMenuItems("shared", "", sub, true).map((item) => item.label), ["File", "Folder"]);
+  assert.deepEqual(libraryAddMenuItems("shared", "", sub, true).map((item) => item.label), []);
+  assert.deepEqual(libraryAddMenuItems("shared", "Photos/Family/", sub, true).map((item) => item.label), []);
+  assert.deepEqual(libraryAddMenuItems("shared", "Videos/", sub, true).map((item) => item.label), []);
   assert.deepEqual(libraryAddMenuItems("mine", mineRootPrefix(sub), sub, true).map((item) => item.label), ["Folder"]);
   assert.equal(showStandaloneFolderButton("shared", "", sub, true), false);
   assert.equal(showStandaloneFolderButton("mine", mineRootPrefix(sub), sub, true), false);

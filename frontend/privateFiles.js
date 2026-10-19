@@ -1297,8 +1297,8 @@ window.shareWithAllDliv = async function (encodedKey) {
   const folder = isFolderKey(key);
   const name = folder ? folderNameFromKey(key) : fileNameFromKey(key);
   const message = folder
-    ? `Make "${name}" available to all DLIV users? Every file in this folder is copied. Your folder stays here.`
-    : `Make "${name}" available to all DLIV users? Your copy stays in this folder.`;
+    ? `Make "${name}" available to all DLIV users? Every file in this folder is copied into a folder with your name. Your folder stays here.`
+    : `Make "${name}" available to all DLIV users? It is copied into a folder with your name. Your copy stays in this folder.`;
   if (!confirm(message)) return;
   if (!(await ensureSignedIn())) { handleSessionExpired(); return; }
   await withListOpProgress("Sharing", async () => {
@@ -1696,6 +1696,7 @@ window.handleUpload = async function (overrideFile = null) {
 
 // ── Create Folder ─────────────────────────────────────────────────────────────
 window.handleCreateFolder = async function () {
+  if (currentTab === "shared") return;
   const raw = prompt("New folder name:");
   if (raw === null) return;
   const name = raw.trim().replace(/\/+/g, "");
