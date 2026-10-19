@@ -1,6 +1,6 @@
 # CONTEXT.md — web-app-893
 # Maintainer notes. Setup is in README.md.
-# Last updated: 2026-10-18
+# Last updated: 2026-10-19
 
 ## What this repo is
 Generic, cloneable web frontend add-on for cognito-s3-stack-893.
@@ -114,5 +114,7 @@ web-app-893/
 `amplify.yml` already writes `frontend/dliv_outputs.json` from the Amplify branch env vars. That file is gitignored. `dliv_outputs.example.json` is the committed schema.
 
 Fork this repo for a new domain. `dliv-web` is the dliv.com deployment of this template, not the repo to fork. Pushing this repo does not rebuild that site. Amplify clones `TEMPLATE_REF` only while building `dliv-web`. Rebuild that Amplify branch after the matching branch here is updated.
+
+All DLIV Users does not add files or folders. Mine uses **All DLIV users** to copy a Music, Photos, or Videos file or album into a folder named for that account.
 
 PDF search and video convert stay off when `PDF_SEARCH_API_URL` and `VIDEO_CONVERT_API_URL` are blank.
