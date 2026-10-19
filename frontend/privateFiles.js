@@ -45,8 +45,7 @@ import { formatFileSize, formatMediaLength, isPlayableAudioKey, isPlayableVideoK
 let currentPrefix = "";
 let currentUserId = null;
 let currentUserLabel = "Mine";
-let currentTab = "shared";
-let currentUserIdentifiers = [];
+let currentTab = "mine";
 let filesLoadGen = 0;
 const mediaLengthCache = new Map();
 const renamedOutputKeys = new Map();
@@ -81,21 +80,6 @@ async function withListOpProgress(label, work) {
 
 async function reloadFilesAfterOp() {
   await loadFiles(currentPrefix, { keepVisibleList: true });
-}
-
-const focusSetUsers = [
-  "Wenner2026@gmail.com",
-];
-
-function identifiersFromToken(payload) {
-  return [payload.sub, payload.email, payload["cognito:username"]]
-    .filter(Boolean)
-    .map((id) => String(id).toLowerCase());
-}
-
-function isFocusSetUser() {
-  const set = new Set(focusSetUsers.map((u) => u.toLowerCase()));
-  return currentUserIdentifiers.some((id) => set.has(id));
 }
 
 function isReservedSharedTopFolder(folderKey) {
@@ -227,13 +211,12 @@ async function showFileBrowser() {
     const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
     currentUserId    = payload.sub;
     currentUserLabel = displayNameFromToken(payload);
-    currentUserIdentifiers = identifiersFromToken(payload);
   } catch {
     handleSessionExpired();
     return;
   }
 
-  currentTab = isFocusSetUser() ? "mine" : "shared";
+  currentTab = "mine";
   currentPrefix = currentTab === "mine" ? mineRootPrefix(currentUserId) : "";
   await syncVideoConvertUi();
   updateTabUI();
@@ -326,8 +309,7 @@ function updateTabUI() {
   const slidesBtn = document.getElementById("tab-btn-slideshows");
   const tabBar    = sharedBtn?.parentElement;
   if (tabBar && mineBtn && sharedBtn) {
-    if (isFocusSetUser()) tabBar.insertBefore(mineBtn, sharedBtn);
-    else tabBar.insertBefore(sharedBtn, mineBtn);
+    tabBar.insertBefore(mineBtn, sharedBtn);
     if (videoBtn) tabBar.appendChild(videoBtn);
     if (slidesBtn) tabBar.appendChild(slidesBtn);
   }
@@ -402,7 +384,7 @@ async function syncVideoConvertUi() {
   const tab = document.getElementById("tab-btn-video");
   if (tab) tab.hidden = !videoConvertOn;
   if (!videoConvertOn && currentTab === "video") {
-    currentTab = isFocusSetUser() ? "mine" : "shared";
+    currentTab = "mine";
   }
   updateTabUI();
   return videoConvertOn;
