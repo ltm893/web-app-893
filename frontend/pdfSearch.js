@@ -4,7 +4,7 @@ import {
   syncAncestryNav,
 } from "./auth.js";
 import { putObject, putMultipart } from "./s3Upload.js";
-import { extractPageList, extractPrintUrl, extractClipboardState, extractOverlayAction, extractKeysToRemove } from "./extractPages.js";
+import { extractPageList, extractPrintUrl, extractClipboardState, extractOverlayAction, extractKeysToRemove, extractPageCountStatus, extractButtonLabel, extractPanelOpenAfterSave, nextExtractRange, keptExtractItems } from "./extractPages.js";
 import {
   folderOf, groupedBoxes, compareCatalogTitle,
   NEW_BOX_SELECT, resolvePdfUploadFolder,
@@ -1239,6 +1239,7 @@ let viewerLoad = 0;
 let viewerDocKey = "";
 let viewerPdfUrl = "";
 let viewerPageHint = 1;
+let viewerPageTotal = 0;
 let pagedPdf = null;
 let pagedPage = 1;
 let pagedCount = 0;
@@ -1324,7 +1325,9 @@ async function loadViewer(key, page) {
   if (status) {
     status.textContent = "";
   }
+  viewerPageTotal = 0;
   setExtractRange(viewerPageHint);
+  applyViewerPageTotal(knownPageCount(key));
   syncExtractMode();
   setExtractPrint([]);
   setExtractPanel(false);
@@ -1389,6 +1392,7 @@ async function loadPagedPdf(url, page, ticket, status) {
     return;
   }
   pagedCount = pagedPdf.numPages || 1;
+  applyViewerPageTotal(pagedCount);
   const start = Number(page);
   pagedPage = Number.isFinite(start) && start >= 1 ? Math.min(Math.floor(start), pagedCount) : 1;
   bindPagedSwipe();
@@ -1407,6 +1411,7 @@ async function showPagedPage(pageNum) {
   if (nextBtn) nextBtn.disabled = pagedPage >= pagedCount;
   setViewerPageLabel(`${pagedPage} / ${pagedCount}`);
   setViewerPageInput(pagedPage, pagedCount);
+  followExtractRange(pagedPage);
   rememberViewerPage(pagedPage);
   const scroll = document.getElementById("pdfsearch-viewer-scroll");
   if (!scroll) return;
@@ -1502,7 +1507,7 @@ function goToViewerPage(raw) {
   }
   if (!viewerPdfUrl) return;
   viewerPageHint = n;
-  setExtractRange(n);
+  followExtractRange(n);
   setViewerPageInput(n, total);
   setViewerPageLabel(total ? `${n} / ${total}` : `Page ${n}`);
   rememberViewerPage(n);
@@ -1515,6 +1520,50 @@ function goToViewerPage(raw) {
   frame.src = nextSrc;
 }
 
+function applyViewerPageTotal(total) {
+  const n = Math.floor(Number(total));
+  if (!Number.isFinite(n) || n < 1) return;
+  viewerPageTotal = n;
+  const page = pagedPdf ? pagedPage : viewerPageHint;
+  setViewerPageInput(page, n);
+  for (const id of ["pdfsearch-viewer-extract-from", "pdfsearch-viewer-extract-to"]) {
+    const input = document.getElementById(id);
+    if (input) input.max = String(n);
+  }
+  refreshExtractPageCountMessage();
+}
+
+function refreshExtractPageCountMessage() {
+  const status = document.getElementById("pdfsearch-viewer-status");
+  if (!status || !viewerPageTotal) return;
+  const mode = document.getElementById("pdfsearch-viewer-extract-mode")?.value || "pages";
+  const from = document.getElementById("pdfsearch-viewer-extract-from")?.value;
+  const to = document.getElementById("pdfsearch-viewer-extract-to")?.value;
+  const next = extractPageCountStatus(status.textContent, mode, from, to, viewerPageTotal);
+  if (next === status.textContent) return;
+  if (!next) restoreViewerPageStatus();
+  else status.textContent = next;
+}
+
+function restoreViewerPageStatus() {
+  const page = pagedPdf ? pagedPage : viewerPageHint;
+  const total = viewerPageTotal || (pagedPdf ? pagedCount : knownPageCount(viewerDocKey));
+  setViewerPageLabel(total ? `${page} / ${total}` : `Page ${page}`);
+}
+
+function followExtractRange(page) {
+  const fromEl = document.getElementById("pdfsearch-viewer-extract-from");
+  const toEl = document.getElementById("pdfsearch-viewer-extract-to");
+  const next = nextExtractRange(fromEl?.value, toEl?.value, page);
+  if (next.from === next.to && (next.from !== fromEl?.value || next.to !== toEl?.value)) {
+    setExtractRange(page);
+    return;
+  }
+  if (fromEl) fromEl.value = next.from;
+  if (toEl) toEl.value = next.to;
+  refreshExtractPageCountMessage();
+}
+
 function setExtractRange(page) {
   const n = Math.floor(Number(page));
   if (!Number.isFinite(n) || n < 1) return;
@@ -1522,6 +1571,7 @@ function setExtractRange(page) {
   const to = document.getElementById("pdfsearch-viewer-extract-to");
   if (from) from.value = String(n);
   if (to) to.value = String(n);
+  refreshExtractPageCountMessage();
 }
 
 function syncExtractMode() {
@@ -1531,15 +1581,20 @@ function syncExtractMode() {
 }
 
 function setExtractPanel(open) {
+  const controls = document.getElementById("pdfsearch-viewer-extract-controls");
   const overlay = document.getElementById("pdfsearch-viewer-extract-overlay");
   const button = document.getElementById("pdfsearch-viewer-extract");
+  if (controls) controls.hidden = !open;
   if (overlay) overlay.hidden = !open;
-  if (button) button.setAttribute("aria-expanded", open ? "true" : "false");
+  if (button) {
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+    button.textContent = extractButtonLabel(open);
+  }
 }
 
 function onExtractClick() {
-  const overlay = document.getElementById("pdfsearch-viewer-extract-overlay");
-  if (extractOverlayAction(Boolean(overlay?.hidden)) === "open") {
+  const controls = document.getElementById("pdfsearch-viewer-extract-controls");
+  if (extractOverlayAction(controls?.hidden !== false) === "open") {
     setExtractRange(pagedPdf ? pagedPage : viewerPageHint);
     setExtractPanel(true);
     return;
@@ -1633,7 +1688,7 @@ async function copyExtractPrintUrl() {
 
 function showSavedExtract(items) {
   setExtractPrint(items);
-  setExtractPanel(true);
+  setExtractPanel(extractPanelOpenAfterSave(items?.length));
 }
 
 async function withViewerPdf(fn) {
@@ -1662,14 +1717,15 @@ async function extractViewerSelection() {
   const mode = document.getElementById("pdfsearch-viewer-extract-mode")?.value || "pages";
   const from = document.getElementById("pdfsearch-viewer-extract-from")?.value;
   const to = document.getElementById("pdfsearch-viewer-extract-to")?.value;
+  const previousItems = savedExtractItems.slice();
   extractBusy = true;
-  setExtractPrint([]);
   if (btn) btn.disabled = true;
   if (printBtn) printBtn.disabled = true;
   if (status) status.textContent = "Extracting…";
   const saved = [];
   try {
     await withViewerPdf(async (pdf) => {
+      applyViewerPageTotal(pdf.numPages || 0);
       const choice = extractPageList(mode, from, to, pdf.numPages || 0);
       if (choice.error) throw new Error(choice.error);
       const fromInput = document.getElementById("pdfsearch-viewer-extract-from");
@@ -1686,6 +1742,7 @@ async function extractViewerSelection() {
     });
     if (!saved.length) throw new Error("Extract failed");
     showSavedExtract(saved);
+    restoreViewerPageStatus();
   } catch (err) {
     if (isAuthError(err)) {
       closePdfSearchViewer(true);
@@ -1696,9 +1753,11 @@ async function extractViewerSelection() {
       showSavedExtract(saved);
       status?.insertAdjacentText("beforeend", ` Stopped: ${err.message || "Extract failed"}`);
     } else if (status) status.textContent = err.message || "Extract failed";
+    if (!saved.length) setExtractPrint(keptExtractItems(previousItems, saved));
   } finally {
     extractBusy = false;
     if (btn) btn.disabled = false;
+    if (printBtn) printBtn.disabled = !extractPrintUrl(savedExtractItems, window.location.href);
   }
 }
 
@@ -1966,7 +2025,13 @@ window.closePdfSearchViewer = closePdfSearchViewer;
 syncExtractMode();
 setExtractPrint([]);
 setExtractPanel(false);
-document.getElementById("pdfsearch-viewer-extract-mode")?.addEventListener("change", syncExtractMode);
+document.getElementById("pdfsearch-viewer-extract-mode")?.addEventListener("change", () => {
+  syncExtractMode();
+  refreshExtractPageCountMessage();
+});
+for (const id of ["pdfsearch-viewer-extract-from", "pdfsearch-viewer-extract-to"]) {
+  document.getElementById(id)?.addEventListener("input", refreshExtractPageCountMessage);
+}
 document.getElementById("pdfsearch-viewer-extract")?.addEventListener("click", onExtractClick);
 document.getElementById("pdfsearch-viewer-print")?.addEventListener("click", () => {
   copyExtractPrintUrl();

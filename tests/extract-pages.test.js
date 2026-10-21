@@ -1,21 +1,77 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
+  extractButtonLabel,
+  extractPanelOpenAfterSave,
   extractClipboardState,
   extractKeysToRemove,
   extractOverlayAction,
+  extractPageCountStatus,
   extractPageList,
   extractPrintHref,
   extractPrintItems,
   extractPrintUrl,
   extractPrintUrls,
   extractRemovePlan,
+  keptExtractItems,
+  nextExtractRange,
 } from "../frontend/extractPages.js";
 test("Clipboard copies the share URL and hides it", () => {
   const copied = extractClipboardState(true);
   const refused = extractClipboardState(false);
   assert.deepEqual(copied, { label: "Copied", showUrl: false });
   assert.deepEqual(refused, { label: "Clipboard", showUrl: true });
+});
+
+test("a page-count warning updates when the PDF or the range changes", () => {
+  assert.equal(extractPageCountStatus("This PDF has 38 pages.", "pages", 40, 44, 38), "This PDF has 38 pages.");
+  assert.equal(extractPageCountStatus("This PDF has 38 pages.", "pages", 40, 44, 30), "This PDF has 30 pages.");
+  assert.equal(extractPageCountStatus("This PDF has 38 pages.", "pages", 40, 44, 50), "");
+  assert.equal(extractPageCountStatus("This PDF has 38 pages.", "pages", 3, 5, 38), "");
+  assert.equal(extractPageCountStatus("Extracting page 3", "pages", 40, 44, 10), "Extracting page 3");
+});
+
+test("the extract button names the open and save steps", () => {
+  assert.equal(extractButtonLabel(false), "Extract");
+  assert.equal(extractButtonLabel(true), "Save Extract");
+});
+
+test("a saved extract closes the range so the button returns to Extract", () => {
+  assert.equal(extractPanelOpenAfterSave(1), false);
+  assert.equal(extractPanelOpenAfterSave(3), false);
+  assert.equal(extractPanelOpenAfterSave(0), true);
+  assert.equal(extractButtonLabel(extractPanelOpenAfterSave(1)), "Extract");
+});
+
+test("a single page range follows the viewer and a typed range stays", () => {
+  assert.deepEqual(nextExtractRange("3", "3", 8), { from: "8", to: "8" });
+  assert.deepEqual(nextExtractRange("40", "44", 3), { from: "40", to: "44" });
+});
+
+test("a failed second extract keeps the Clipboard link from the first", () => {
+  const first = [{ url: "https://extracts.example/page-1.jpg", key: "BOX016/a-p1.jpg" }];
+  assert.deepEqual(keptExtractItems(first, []), first);
+  const second = [{ url: "https://extracts.example/page-2.jpg", key: "BOX016/a-p2.jpg" }];
+  assert.deepEqual(keptExtractItems(first, second), second);
+});
+
+test("extract range and Clipboard stay on the viewer bar", () => {
+  const html = readFileSync(new URL("../frontend/index.html", import.meta.url), "utf8");
+  const barStart = html.indexOf('id="pdfsearch-viewer-bar"');
+  const overlayAt = html.indexOf('id="pdfsearch-viewer-extract-overlay"');
+  const bar = html.slice(barStart, overlayAt);
+  const rangeAt = bar.indexOf('id="pdfsearch-viewer-extract-range"');
+  const extractAt = bar.indexOf('id="pdfsearch-viewer-extract"');
+  const printAt = bar.indexOf('id="pdfsearch-viewer-print"');
+  assert.ok(rangeAt > 0, "page range is in the viewer bar");
+  assert.ok(extractAt > rangeAt, "Save Extract follows the page range");
+  assert.ok(printAt > extractAt, "Clipboard follows Save Extract");
+  const overlay = html.slice(overlayAt, html.indexOf("</div>", overlayAt) + 6);
+  assert.equal(overlay.includes("pdfsearch-viewer-extract-from"), false);
+  assert.equal(overlay.includes("pdfsearch-viewer-print"), false);
+  assert.match(bar, /id="pdfsearch-viewer-goto"[^>]*\bhidden\b/);
+  assert.match(bar, /id="pdfsearch-viewer-extract-controls"[^>]*\bhidden\b/);
 });
 
 test("a closed extract overlay opens and an open one extracts", () => {
