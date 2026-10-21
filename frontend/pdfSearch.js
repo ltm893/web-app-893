@@ -1534,7 +1534,10 @@ function setExtractPanel(open) {
   const overlay = document.getElementById("pdfsearch-viewer-extract-overlay");
   const button = document.getElementById("pdfsearch-viewer-extract");
   if (overlay) overlay.hidden = !open;
-  if (button) button.setAttribute("aria-expanded", open ? "true" : "false");
+  if (button) {
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+    button.textContent = open ? "Save Extract" : "Extract";
+  }
 }
 
 function onExtractClick() {
