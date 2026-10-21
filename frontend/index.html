@@ -635,6 +635,7 @@
     }
     #pdfsearch-viewer-title { flex: 1; font-size: 0.9rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 6rem; }
     #pdfsearch-viewer-goto { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; white-space: nowrap; }
+    #pdfsearch-viewer-goto[hidden] { display: none; }
     #pdfsearch-viewer-page {
       width: 4.5rem; box-sizing: border-box;
       background: #1e3a5f; color: #fff; border: 1.5px solid rgba(255,255,255,0.4);
@@ -1155,7 +1156,7 @@
       <button type="button" id="pdfsearch-viewer-prev" style="display:none">Prev</button>
       <span id="pdfsearch-viewer-title">Source PDF</span>
       <span id="pdfsearch-viewer-status"></span>
-      <label id="pdfsearch-viewer-goto">Page
+      <label id="pdfsearch-viewer-goto" hidden>Page
         <input id="pdfsearch-viewer-page" type="number" min="1" value="1" inputmode="numeric" aria-label="Page number" />
       </label>
       <button type="button" id="pdfsearch-viewer-next" style="display:none">Next</button>

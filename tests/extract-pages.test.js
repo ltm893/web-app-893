@@ -62,6 +62,8 @@ test("extract range and Clipboard stay on the viewer bar", () => {
   const overlay = html.slice(overlayAt, html.indexOf("</div>", overlayAt) + 6);
   assert.equal(overlay.includes("pdfsearch-viewer-extract-from"), false);
   assert.equal(overlay.includes("pdfsearch-viewer-print"), false);
+  assert.match(bar, /id="pdfsearch-viewer-goto"[^>]*\bhidden\b/);
+  assert.match(bar, /id="pdfsearch-viewer-extract-controls"[^>]*\bhidden\b/);
 });
 
 test("a closed extract overlay opens and an open one extracts", () => {
