@@ -32,6 +32,10 @@ export function extractButtonLabel(open) {
   return open ? "Save Extract" : "Extract";
 }
 
+export function extractPanelOpenAfterSave(savedCount) {
+  return !(Number(savedCount) > 0);
+}
+
 export function nextExtractRange(from, to, page) {
   const start = String(from ?? "");
   const end = String(to ?? "");

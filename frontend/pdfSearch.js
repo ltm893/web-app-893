@@ -4,7 +4,7 @@ import {
   syncAncestryNav,
 } from "./auth.js";
 import { putObject, putMultipart } from "./s3Upload.js";
-import { extractPageList, extractPrintUrl, extractClipboardState, extractOverlayAction, extractKeysToRemove, extractPageCountStatus, extractButtonLabel, nextExtractRange, keptExtractItems } from "./extractPages.js";
+import { extractPageList, extractPrintUrl, extractClipboardState, extractOverlayAction, extractKeysToRemove, extractPageCountStatus, extractButtonLabel, extractPanelOpenAfterSave, nextExtractRange, keptExtractItems } from "./extractPages.js";
 import {
   folderOf, groupedBoxes, compareCatalogTitle,
   NEW_BOX_SELECT, resolvePdfUploadFolder,
@@ -1688,7 +1688,7 @@ async function copyExtractPrintUrl() {
 
 function showSavedExtract(items) {
   setExtractPrint(items);
-  setExtractPanel(true);
+  setExtractPanel(extractPanelOpenAfterSave(items?.length));
 }
 
 async function withViewerPdf(fn) {

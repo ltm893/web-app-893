@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   extractButtonLabel,
+  extractPanelOpenAfterSave,
   extractClipboardState,
   extractKeysToRemove,
   extractOverlayAction,
@@ -34,6 +35,13 @@ test("a page-count warning updates when the PDF or the range changes", () => {
 test("the extract button names the open and save steps", () => {
   assert.equal(extractButtonLabel(false), "Extract");
   assert.equal(extractButtonLabel(true), "Save Extract");
+});
+
+test("a saved extract closes the range so the button returns to Extract", () => {
+  assert.equal(extractPanelOpenAfterSave(1), false);
+  assert.equal(extractPanelOpenAfterSave(3), false);
+  assert.equal(extractPanelOpenAfterSave(0), true);
+  assert.equal(extractButtonLabel(extractPanelOpenAfterSave(1)), "Extract");
 });
 
 test("a single page range follows the viewer and a typed range stays", () => {
