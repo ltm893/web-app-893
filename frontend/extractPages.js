@@ -20,6 +20,32 @@ export function extractPageList(mode, from, to, count) {
   return { pages };
 }
 
+export function extractPageCountStatus(currentStatus, mode, from, to, total) {
+  const status = String(currentStatus || "");
+  if (!/^This PDF has \d+ pages\.$/.test(status)) return status;
+  const choice = extractPageList(mode, from, to, total);
+  if (choice.error && /^This PDF has \d+ pages\.$/.test(choice.error)) return choice.error;
+  return "";
+}
+
+export function extractButtonLabel(open) {
+  return open ? "Save Extract" : "Extract";
+}
+
+export function nextExtractRange(from, to, page) {
+  const start = String(from ?? "");
+  const end = String(to ?? "");
+  if (start && end && start !== end) return { from: start, to: end };
+  const n = Math.floor(Number(page));
+  if (!Number.isFinite(n) || n < 1) return { from: start || "1", to: end || start || "1" };
+  return { from: String(n), to: String(n) };
+}
+
+export function keptExtractItems(previousItems, savedItems) {
+  if (savedItems?.length) return savedItems;
+  return previousItems || [];
+}
+
 function printItem(value) {
   if (typeof value === "string") {
     const url = value.trim();

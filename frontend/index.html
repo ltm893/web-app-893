@@ -644,24 +644,23 @@
     #pdfsearch-viewer-extract { white-space: nowrap; }
     #pdfsearch-viewer-extract[aria-expanded="true"] { background: rgba(255,255,255,0.15); }
     #pdfsearch-viewer-extract-overlay {
-      position: absolute; inset: 0; z-index: 5;
-      background: rgba(15, 28, 45, 0.45);
+      position: absolute; inset: 0; z-index: 4;
+      background: transparent;
     }
     #pdfsearch-viewer-extract-overlay[hidden] { display: none; }
     #pdfsearch-viewer-extract-controls {
-      position: absolute; top: 4.25rem; right: 1rem;
-      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
-      width: min(52rem, calc(100% - 2rem));
-      padding: 0.75rem; background: #1e3a5f; color: #fff;
-      border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      display: inline-flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+      color: #fff;
     }
+    #pdfsearch-viewer-extract-controls[hidden] { display: none; }
     #pdfsearch-viewer-extract-controls select,
     #pdfsearch-viewer-extract-controls input {
       background: #1e3a5f; color: #fff; border: 1.5px solid rgba(255,255,255,0.4);
       border-radius: 8px; font-family: Arial, sans-serif; font-size: 0.85rem; padding: 0.2rem 0.45rem;
     }
     #pdfsearch-viewer-extract-controls input { width: 3.5rem; }
-    #pdfsearch-viewer-extract-controls textarea#pdfsearch-viewer-print-url {
+    #pdfsearch-viewer-extract-controls textarea#pdfsearch-viewer-print-url,
+    #pdfsearch-viewer-bar textarea#pdfsearch-viewer-print-url {
       flex: 1 1 100%; width: 100%; min-width: 0; box-sizing: border-box;
       margin: 0; padding: 0.45rem 0.55rem;
       background: #1e3a5f; color: #fff; border: 1.5px solid rgba(255,255,255,0.4);
@@ -1160,11 +1159,7 @@
         <input id="pdfsearch-viewer-page" type="number" min="1" value="1" inputmode="numeric" aria-label="Page number" />
       </label>
       <button type="button" id="pdfsearch-viewer-next" style="display:none">Next</button>
-      <button type="button" id="pdfsearch-viewer-extract" aria-expanded="false" aria-controls="pdfsearch-viewer-extract-overlay">Extract</button>
-      <button type="button" id="pdfsearch-viewer-close">Close</button>
-    </div>
-    <div id="pdfsearch-viewer-extract-overlay" hidden>
-      <div id="pdfsearch-viewer-extract-controls" role="group" aria-label="Extract pages">
+      <span id="pdfsearch-viewer-extract-controls" hidden role="group" aria-label="Extract pages">
         <select id="pdfsearch-viewer-extract-mode" aria-label="What to extract">
           <option value="pages">Pages</option>
           <option value="all">Entire PDF</option>
@@ -1174,11 +1169,14 @@
           <span aria-hidden="true">–</span>
           <input id="pdfsearch-viewer-extract-to" type="number" min="1" value="1" aria-label="To page" />
         </span>
-        <button type="button" id="pdfsearch-viewer-print" hidden disabled>Clipboard</button>
-        <textarea id="pdfsearch-viewer-print-url" readonly hidden rows="1" aria-label="Print URL"></textarea>
-        <span id="pdfsearch-viewer-extract-note"></span>
-      </div>
+      </span>
+      <button type="button" id="pdfsearch-viewer-extract" aria-expanded="false" aria-controls="pdfsearch-viewer-extract-controls">Extract</button>
+      <button type="button" id="pdfsearch-viewer-print" hidden disabled>Clipboard</button>
+      <span id="pdfsearch-viewer-extract-note"></span>
+      <textarea id="pdfsearch-viewer-print-url" readonly hidden rows="1" aria-label="Print URL"></textarea>
+      <button type="button" id="pdfsearch-viewer-close">Close</button>
     </div>
+    <div id="pdfsearch-viewer-extract-overlay" hidden></div>
     <iframe id="pdfsearch-viewer-frame" title="Source PDF"></iframe>
     <div id="pdfsearch-viewer-progress" class="apple-progress apple-progress--on-dark" hidden>
       <p class="apple-progress-label">Loading PDF</p>
