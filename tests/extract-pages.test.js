@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import {
   extractButtonLabel,
   extractPanelOpenAfterSave,
+  formatExtractPageLabel,
+  groupExtractRanges,
   extractClipboardState,
   extractKeysToRemove,
   extractOverlayAction,
@@ -42,6 +44,40 @@ test("a saved extract closes the range so the button returns to Extract", () => 
   assert.equal(extractPanelOpenAfterSave(3), false);
   assert.equal(extractPanelOpenAfterSave(0), true);
   assert.equal(extractButtonLabel(extractPanelOpenAfterSave(1)), "Extract");
+});
+
+test("show all extracts keeps a saved page range together", () => {
+  const pages = [10, 8, 9, 7, 5, 6, 4].map((page) => ({
+    key: `BOX005/0003-p${page}-20261022T1201${String(page).padStart(2, "0")}Z.jpg`,
+    folder: "BOX005",
+    filename: "0003.pdf",
+    page,
+    createdAt: `2026-10-22T12:01:${String(page).padStart(2, "0")}Z`,
+  }));
+  const later = {
+    key: "BOX005/0003-p1-20261022T130000Z.jpg",
+    folder: "BOX005",
+    filename: "0003.pdf",
+    page: 1,
+    createdAt: "2026-10-22T13:00:00Z",
+  };
+  const groups = groupExtractRanges([...pages, later]);
+  assert.equal(groups.length, 2);
+  const range = groups.find((group) => group.label === "p. 4–10");
+  assert.deepEqual(range.pages, [4, 5, 6, 7, 8, 9, 10]);
+  assert.equal(range.keys.length, 7);
+  assert.equal(groups.find((group) => group.page === 1), undefined);
+  assert.equal(groups.find((group) => group.label === "p. 1").keys.length, 1);
+  const stamped = [4, 10].map((page) => ({
+    key: `BOX005/0003-p${page}-20261022T140000Z.jpg`,
+    folder: "BOX005",
+    filename: "0003.pdf",
+    page,
+    stamp: "20261022T140000Z",
+    createdAt: page === 4 ? "2026-10-22T14:00:00Z" : "2026-10-22T14:20:00Z",
+  }));
+  assert.equal(groupExtractRanges(stamped)[0].label, "p. 4, 10");
+  assert.equal(formatExtractPageLabel([3]), "p. 3");
 });
 
 test("a single page range follows the viewer and a typed range stays", () => {

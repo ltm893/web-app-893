@@ -50,6 +50,82 @@ export function keptExtractItems(previousItems, savedItems) {
   return previousItems || [];
 }
 
+export function extractStampFromKey(key) {
+  const match = /-p\d+-(\d{8}T\d{6}Z)\./i.exec(String(key || ""));
+  return match ? match[1].toUpperCase() : "";
+}
+
+export function formatExtractPageLabel(pages) {
+  const nums = [...new Set((pages || []).map((n) => Math.floor(Number(n))).filter((n) => n >= 1))].sort((a, b) => a - b);
+  if (!nums.length) return "";
+  const runs = [];
+  let start = nums[0];
+  let prev = nums[0];
+  for (let i = 1; i < nums.length; i++) {
+    if (nums[i] === prev + 1) {
+      prev = nums[i];
+      continue;
+    }
+    runs.push(start === prev ? `${start}` : `${start}–${prev}`);
+    start = prev = nums[i];
+  }
+  runs.push(start === prev ? `${start}` : `${start}–${prev}`);
+  return `p. ${runs.join(", ")}`;
+}
+
+export function groupExtractRanges(extracts, gapMs = 3 * 60 * 1000) {
+  const items = (extracts || []).map((item) => ({
+    key: String(item?.key || ""),
+    folder: String(item?.folder || ""),
+    filename: String(item?.filename || ""),
+    page: Math.floor(Number(item?.page)),
+    createdAt: String(item?.createdAt || ""),
+    stamp: String(item?.stamp || extractStampFromKey(item?.key)),
+  })).filter((item) => item.key && item.page >= 1);
+  items.sort((a, b) => {
+    const doc = `${a.folder}/${a.filename}`.localeCompare(`${b.folder}/${b.filename}`);
+    if (doc) return doc;
+    const time = a.createdAt.localeCompare(b.createdAt);
+    if (time) return time;
+    return a.page - b.page;
+  });
+  const groups = [];
+  for (const item of items) {
+    const prev = groups[groups.length - 1];
+    const last = prev?.items[prev.items.length - 1];
+    const sameDoc = last && last.folder === item.folder && last.filename === item.filename;
+    const sameStamp = Boolean(sameDoc && item.stamp && last.stamp === item.stamp);
+    const prevMs = Date.parse(last?.createdAt || "");
+    const nextMs = Date.parse(item.createdAt || "");
+    const continues = Boolean(
+      sameDoc
+      && item.page === last.page + 1
+      && Number.isFinite(prevMs)
+      && Number.isFinite(nextMs)
+      && nextMs >= prevMs
+      && nextMs - prevMs <= gapMs
+    );
+    if (prev && (sameStamp || continues)) {
+      prev.items.push(item);
+      continue;
+    }
+    groups.push({ items: [item] });
+  }
+  return groups.map((group) => {
+    const ordered = [...group.items].sort((a, b) => a.page - b.page || a.key.localeCompare(b.key));
+    const pages = ordered.map((item) => item.page);
+    const createdAt = ordered.map((item) => item.createdAt).filter(Boolean).sort().at(-1) || "";
+    return {
+      keys: ordered.map((item) => item.key),
+      folder: ordered[0].folder,
+      filename: ordered[0].filename,
+      pages,
+      label: formatExtractPageLabel(pages),
+      createdAt,
+    };
+  }).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+}
+
 function printItem(value) {
   if (typeof value === "string") {
     const url = value.trim();

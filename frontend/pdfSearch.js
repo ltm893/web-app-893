@@ -4,7 +4,7 @@ import {
   syncAncestryNav,
 } from "./auth.js";
 import { putObject, putMultipart } from "./s3Upload.js";
-import { extractPageList, extractPrintUrl, extractClipboardState, extractOverlayAction, extractKeysToRemove, extractPageCountStatus, extractButtonLabel, extractPanelOpenAfterSave, nextExtractRange, keptExtractItems } from "./extractPages.js";
+import { extractPageList, extractPrintUrl, extractClipboardState, extractOverlayAction, extractKeysToRemove, extractPageCountStatus, extractButtonLabel, extractPanelOpenAfterSave, nextExtractRange, keptExtractItems, groupExtractRanges } from "./extractPages.js";
 import {
   folderOf, groupedBoxes, compareCatalogTitle,
   NEW_BOX_SELECT, resolvePdfUploadFolder,
@@ -1027,22 +1027,26 @@ function formatExtractDate(iso) {
 function renderExtractList(extracts) {
   const list = document.getElementById("pdfsearch-extract-all");
   const status = document.getElementById("pdfsearch-browse-status");
-  const rows = Array.isArray(extracts) ? extracts : [];
+  const groups = groupExtractRanges(extracts);
   if (status) {
     status.dataset.mode = "extracts";
-    status.textContent = rows.length
-      ? `${rows.length} extract${rows.length === 1 ? "" : "s"}`
+    status.textContent = groups.length
+      ? `${groups.length} extract${groups.length === 1 ? "" : "s"}`
       : "No extracts";
   }
   if (!list) return;
-  list.innerHTML = rows.map((item) => {
-    const when = formatExtractDate(item.createdAt);
-    const label = `${item.folder || ""} · ${item.filename || ""} · p. ${item.page}${when ? ` · ${when}` : ""}`;
-    return `<li class="pdfsearch-extract-row" data-extract-key="${escapeAttr(item.key)}">
-      <input type="checkbox" class="pdfsearch-extract-check" data-key="${escapeAttr(item.key)}" aria-label="Select extract" />
+  list.innerHTML = groups.map((group) => {
+    const when = formatExtractDate(group.createdAt);
+    const label = `${group.folder || ""} · ${group.filename || ""} · ${group.label}${when ? ` · ${when}` : ""}`;
+    const keys = group.keys.map((key) =>
+      `<input type="hidden" class="pdfsearch-extract-key" value="${escapeAttr(key)}" />`
+    ).join("");
+    return `<li class="pdfsearch-extract-row">
+      <input type="checkbox" class="pdfsearch-extract-check" aria-label="Select extract" />
+      ${keys}
       <span class="pdfsearch-extract-label">${escapeHtml(label)}</span>
       <span class="pdfsearch-extract-row-actions">
-        <button type="button" class="pdfsearch-extract-print" data-key="${escapeAttr(item.key)}">Clipboard</button>
+        <button type="button" class="pdfsearch-extract-print">Clipboard</button>
       </span>
     </li>`;
   }).join("");
@@ -1107,12 +1111,16 @@ function showExtractUrlFallback(row, shareUrl) {
   field.select();
 }
 
-async function printSavedExtract(key, row, button) {
+async function printSavedExtract(keys, row, button) {
   const apiUrl = await getPdfSearchApiUrl();
-  const res = await authFetch(`${apiUrl}extracts?key=${encodeURIComponent(key)}`);
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-  const shareUrl = extractPrintUrl([{ url: data.url || "", key: data.key || key }], window.location.href);
+  const items = [];
+  for (const key of keys) {
+    const res = await authFetch(`${apiUrl}extracts?key=${encodeURIComponent(key)}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    items.push({ url: data.url || "", key: data.key || key });
+  }
+  const shareUrl = extractPrintUrl(items, window.location.href);
   if (!shareUrl) throw new Error("Could not make a print URL");
   const copied = await writeClipboard(shareUrl);
   const state = extractClipboardState(copied);
@@ -1125,21 +1133,29 @@ async function printSavedExtract(key, row, button) {
   if (row) showExtractUrlFallback(row, shareUrl);
 }
 
-function listedExtractKeys() {
-  return [...document.querySelectorAll("#pdfsearch-extract-all .pdfsearch-extract-row")]
-    .map((row) => row.getAttribute("data-extract-key") || "")
+function keysInExtractRow(row) {
+  return [...(row?.querySelectorAll(".pdfsearch-extract-key") || [])]
+    .map((input) => input.value || "")
     .filter(Boolean);
+}
+
+function extractRows() {
+  return [...document.querySelectorAll("#pdfsearch-extract-all .pdfsearch-extract-row")];
+}
+
+function listedExtractKeys() {
+  return extractRows().flatMap((row) => keysInExtractRow(row));
 }
 
 function selectedExtractKeys() {
-  return [...document.querySelectorAll("#pdfsearch-extract-all .pdfsearch-extract-check:checked")]
-    .map((box) => box.getAttribute("data-key") || "")
-    .filter(Boolean);
+  return extractRows()
+    .filter((row) => row.querySelector(".pdfsearch-extract-check")?.checked)
+    .flatMap((row) => keysInExtractRow(row));
 }
 
 function syncExtractRemoveButtons() {
-  const listed = listedExtractKeys();
-  const selected = selectedExtractKeys();
+  const listed = extractRows();
+  const selected = listed.filter((row) => row.querySelector(".pdfsearch-extract-check")?.checked);
   const selectAll = document.getElementById("pdfsearch-extract-select-all");
   const removeSelected = document.getElementById("pdfsearch-extract-remove-selected");
   if (selectAll) {
@@ -1162,21 +1178,27 @@ function updateExtractCount() {
 
 async function deleteExtractKeys(keys) {
   const apiUrl = await getPdfSearchApiUrl();
+  const rows = new Set();
   for (const key of keys) {
+    const input = [...document.querySelectorAll("#pdfsearch-extract-all .pdfsearch-extract-key")]
+      .find((el) => el.value === key);
+    const row = input?.closest(".pdfsearch-extract-row");
+    if (row) rows.add(row);
     const res = await authFetch(`${apiUrl}extracts?key=${encodeURIComponent(key)}`, { method: "DELETE" });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-    document.querySelector(`#pdfsearch-extract-all .pdfsearch-extract-row[data-extract-key="${CSS.escape(key)}"]`)?.remove();
   }
+  rows.forEach((row) => row.remove());
   updateExtractCount();
 }
 
 async function removeExtractSelection() {
   const keys = extractKeysToRemove(listedExtractKeys(), selectedExtractKeys());
   if (!keys.length) return;
-  const message = keys.length === 1
+  const rows = extractRows().filter((row) => row.querySelector(".pdfsearch-extract-check")?.checked).length;
+  const message = rows === 1
     ? "Remove this extract? The print link will stop working."
-    : `Remove ${keys.length} extracts? The print links will stop working.`;
+    : `Remove ${rows} extracts? The print links will stop working.`;
   if (!window.confirm(message)) return;
   const removeSelected = document.getElementById("pdfsearch-extract-remove-selected");
   if (removeSelected) removeSelected.disabled = true;
@@ -1202,14 +1224,14 @@ document.addEventListener("click", (e) => {
   const extractPrintBtn = e.target.closest(".pdfsearch-extract-print");
   if (extractPrintBtn) {
     e.preventDefault();
-    const key = extractPrintBtn.getAttribute("data-key");
-    if (!key) return;
+    const row = extractPrintBtn.closest(".pdfsearch-extract-row");
+    const keys = keysInExtractRow(row);
+    if (!keys.length) return;
     extractPrintBtn.disabled = true;
     document.querySelectorAll(".pdfsearch-extract-print").forEach((btn) => {
       if (btn !== extractPrintBtn) btn.textContent = "Clipboard";
     });
-    const row = extractPrintBtn.closest(".pdfsearch-extract-row");
-    printSavedExtract(key, row, extractPrintBtn).catch(async (err) => {
+    printSavedExtract(keys, row, extractPrintBtn).catch(async (err) => {
       if (isAuthError(err)) {
         await initPdfSearch();
         return;
@@ -1246,12 +1268,9 @@ let pagedCount = 0;
 let pdfjsLibPromise = null;
 
 function needsPagedPdfViewer() {
-  const ua = navigator.userAgent || "";
-  if (/iPhone|iPad|iPod/i.test(ua)) return true;
-  if (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) return true;
-  // Desktop Safari often leaves cross-origin PDFs blank in an iframe.
-  if (/Safari/i.test(ua) && !/Chrome|Chromium|CriOS|Edg|Android/i.test(ua)) return true;
-  return false;
+  // The browser PDF toolbar does not report its page, so the viewer we draw
+  // is the page the extract range follows.
+  return true;
 }
 
 async function getPdfjs() {
@@ -1623,7 +1642,7 @@ async function renderPdfPageJpeg(pdf, pageNum) {
   return canvasToJpeg(canvas);
 }
 
-async function uploadExtractPage(sourceKey, pageNum, blob) {
+async function uploadExtractPage(sourceKey, pageNum, blob, batch) {
   const apiUrl = await getPdfSearchApiUrl();
   const res = await authFetch(`${apiUrl}extracts`, {
     method: "POST",
@@ -1632,6 +1651,7 @@ async function uploadExtractPage(sourceKey, pageNum, blob) {
       sourceKey,
       page: pageNum,
       contentType: "image/jpeg",
+      batch,
     }),
   });
   const data = await res.json().catch(() => ({}));
@@ -1732,11 +1752,12 @@ async function extractViewerSelection() {
       const toInput = document.getElementById("pdfsearch-viewer-extract-to");
       if (fromInput) fromInput.max = String(pdf.numPages || 1);
       if (toInput) toInput.max = String(pdf.numPages || 1);
+      const batch = new Date().toISOString();
       for (let i = 0; i < choice.pages.length; i++) {
         const pageNum = choice.pages[i];
         if (status) status.textContent = `Extracting page ${pageNum} (${i + 1} of ${choice.pages.length})`;
         const blob = await renderPdfPageJpeg(pdf, pageNum);
-        const savedItem = await uploadExtractPage(viewerDocKey, pageNum, blob);
+        const savedItem = await uploadExtractPage(viewerDocKey, pageNum, blob, batch);
         if (savedItem.url) saved.push(savedItem);
       }
     });
