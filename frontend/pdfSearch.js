@@ -1353,6 +1353,8 @@ async function loadViewer(key, page) {
   if (progress) progress.hidden = false;
   const ticket = ++viewerLoad;
   frame.removeAttribute("src");
+  viewerPdfUrl = "";
+  setViewerDownloadEnabled(false);
   const paged = needsPagedPdfViewer();
   overlay.classList.toggle("is-paged", paged);
   setPagedNavVisible(paged);
@@ -1362,6 +1364,7 @@ async function loadViewer(key, page) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     viewerPdfUrl = data.url || "";
+    setViewerDownloadEnabled(Boolean(viewerPdfUrl));
     if (ticket !== viewerLoad) return;
     if (paged) {
       await loadPagedPdf(data.url, page, ticket, status);
@@ -1998,6 +2001,36 @@ async function uploadPdfsToArchive(files) {
   }
 }
 
+function setViewerDownloadEnabled(enabled) {
+  const button = document.getElementById("pdfsearch-viewer-download");
+  if (button) button.disabled = !enabled;
+}
+
+async function downloadViewerPdf() {
+  const button = document.getElementById("pdfsearch-viewer-download");
+  const status = document.getElementById("pdfsearch-viewer-status");
+  if (!viewerPdfUrl || !viewerDocKey) return;
+  const filename = viewerDocKey.split("/").pop() || "document.pdf";
+  if (button) button.disabled = true;
+  try {
+    const res = await fetch(viewerPdfUrl);
+    if (!res.ok) throw new Error("Could not download PDF");
+    const blob = await res.blob();
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = href;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
+  } catch (err) {
+    if (status) status.textContent = err.message || "Could not download PDF";
+  } finally {
+    if (button) button.disabled = !viewerPdfUrl;
+  }
+}
+
 function closePdfSearchViewer(updateHash) {
   viewerLoad += 1;
   const overlay = document.getElementById("pdfsearch-viewer");
@@ -2011,6 +2044,7 @@ function closePdfSearchViewer(updateHash) {
   destroyPagedPdf();
   viewerDocKey = "";
   viewerPdfUrl = "";
+  setViewerDownloadEnabled(false);
   viewerPageHint = 1;
   setViewerPageInput(1, 0);
   if (!updateHash) return;
@@ -2056,6 +2090,9 @@ for (const id of ["pdfsearch-viewer-extract-from", "pdfsearch-viewer-extract-to"
 document.getElementById("pdfsearch-viewer-extract")?.addEventListener("click", onExtractClick);
 document.getElementById("pdfsearch-viewer-print")?.addEventListener("click", () => {
   copyExtractPrintUrl();
+});
+document.getElementById("pdfsearch-viewer-download")?.addEventListener("click", () => {
+  downloadViewerPdf();
 });
 document.getElementById("pdfsearch-viewer-print-url")?.addEventListener("click", () => {
   copyExtractPrintUrl();

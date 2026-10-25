@@ -100,9 +100,13 @@ test("extract range and Clipboard stay on the viewer bar", () => {
   const rangeAt = bar.indexOf('id="pdfsearch-viewer-extract-range"');
   const extractAt = bar.indexOf('id="pdfsearch-viewer-extract"');
   const printAt = bar.indexOf('id="pdfsearch-viewer-print"');
+  const downloadAt = bar.indexOf('id="pdfsearch-viewer-download"');
+  const closeAt = bar.indexOf('id="pdfsearch-viewer-close"');
   assert.ok(rangeAt > 0, "page range is in the viewer bar");
   assert.ok(extractAt > rangeAt, "Save Extract follows the page range");
   assert.ok(printAt > extractAt, "Clipboard follows Save Extract");
+  assert.ok(downloadAt > printAt, "Download follows Clipboard");
+  assert.ok(closeAt > downloadAt, "Close follows Download");
   const overlay = html.slice(overlayAt, html.indexOf("</div>", overlayAt) + 6);
   assert.equal(overlay.includes("pdfsearch-viewer-extract-from"), false);
   assert.equal(overlay.includes("pdfsearch-viewer-print"), false);
