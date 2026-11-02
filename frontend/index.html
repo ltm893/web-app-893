@@ -203,6 +203,16 @@
     #name-prompt-actions button { font-size: 0.82rem; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; border: 1.5px solid #1e3a5f; }
     #name-prompt-ok { background: #1e3a5f; color: white; }
     #name-prompt-cancel { background: transparent; color: #1e3a5f; }
+    #pdfsearch-cost-prompt { position: fixed; inset: 0; z-index: 1400; background: rgba(0,0,0,0.45); display: flex; align-items: flex-start; justify-content: center; padding: 12vh 1rem 1rem; }
+    #pdfsearch-cost-prompt[hidden] { display: none; }
+    #pdfsearch-cost-box { background: white; border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 520px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); font-family: Arial, sans-serif; color: #1e3a5f; }
+    #pdfsearch-cost-box h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+    #pdfsearch-cost-body p { margin: 0.35rem 0; font-size: 0.92rem; }
+    #pdfsearch-cost-note { margin: 0.85rem 0 0; font-size: 0.82rem; line-height: 1.4; color: #3d4f66; }
+    #pdfsearch-cost-actions { display: flex; gap: 0.5rem; margin-top: 0.9rem; }
+    #pdfsearch-cost-actions button { font-size: 0.82rem; padding: 0.4rem 1rem; border-radius: 20px; cursor: pointer; font-family: Arial, sans-serif; font-weight: 500; border: 1.5px solid #1e3a5f; }
+    #pdfsearch-cost-continue { background: #1e3a5f; color: white; }
+    #pdfsearch-cost-cancel { background: transparent; color: #1e3a5f; }
     #move-picker { position: fixed; inset: 0; z-index: 1400; background: rgba(0,0,0,0.45); display: flex; align-items: flex-start; justify-content: center; padding: 10vh 1rem 1rem; }
     #move-picker[hidden] { display: none; }
     #move-picker-box { background: white; border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 420px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
@@ -1023,6 +1033,18 @@
     <input id="player-progress" type="range" min="0" max="100" value="0" oninput="playerSeek(this)" />
     <span id="player-count"></span>
     <button onclick="playerStop()">■ Stop</button>
+  </div>
+
+  <div id="pdfsearch-cost-prompt" hidden role="dialog" aria-modal="true" aria-labelledby="pdfsearch-cost-title">
+    <form id="pdfsearch-cost-box">
+      <h3 id="pdfsearch-cost-title">Read this PDF?</h3>
+      <div id="pdfsearch-cost-body"></div>
+      <p id="pdfsearch-cost-note"></p>
+      <div id="pdfsearch-cost-actions">
+        <button type="submit" id="pdfsearch-cost-continue">Continue</button>
+        <button type="button" id="pdfsearch-cost-cancel">Cancel</button>
+      </div>
+    </form>
   </div>
 
   <div id="name-prompt" hidden role="dialog" aria-modal="true" aria-labelledby="name-prompt-title">
