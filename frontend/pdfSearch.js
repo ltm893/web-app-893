@@ -1889,6 +1889,79 @@ function startOcrPoll(keys) {
   ocrPollTimer = setTimeout(tick, 1500);
 }
 
+function formatUsd(amount) {
+  const n = Number(amount) || 0;
+  if (n > 0 && n < 0.01) return `$${n.toFixed(4)}`;
+  return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+}
+
+async function countPdfPages(file) {
+  const text = new TextDecoder("latin1").decode(await file.arrayBuffer());
+  const pages = text.match(/\/Type\s*\/Page(?![A-Za-z])/g);
+  if (pages?.length) return pages.length;
+  let max = 0;
+  for (const match of text.matchAll(/\/Count\s+(\d+)/g)) {
+    const n = Number(match[1]);
+    if (n > max && n < 100000) max = n;
+  }
+  return max;
+}
+
+function costPromptHtml(estimate, namesByKey) {
+  const files = (estimate.items || []).map((item) => {
+    const name = namesByKey.get(item.key) || String(item.key || "").split("/").pop();
+    const pages = Number(item.pages) || 0;
+    return `<p><strong>${escapeHtml(name)}</strong> — ${pages} page${pages === 1 ? "" : "s"}</p>`;
+  }).join("");
+  const pageLabel = `${estimate.pages} page${estimate.pages === 1 ? "" : "s"}`;
+  return `${files}
+    <p>Textract, ${pageLabel} — ${formatUsd(estimate.textractUsd)}</p>
+    <p>Nova Lite summary — ${formatUsd(estimate.novaUsd)}</p>
+    <p><strong>Total ${formatUsd(estimate.totalUsd)}</strong></p>`;
+}
+
+function confirmIngestCost({ title, body, note, allowContinue }) {
+  const root = document.getElementById("pdfsearch-cost-prompt");
+  const form = document.getElementById("pdfsearch-cost-box");
+  const titleEl = document.getElementById("pdfsearch-cost-title");
+  const bodyEl = document.getElementById("pdfsearch-cost-body");
+  const noteEl = document.getElementById("pdfsearch-cost-note");
+  const cancel = document.getElementById("pdfsearch-cost-cancel");
+  const cont = document.getElementById("pdfsearch-cost-continue");
+  titleEl.textContent = title;
+  bodyEl.innerHTML = body;
+  noteEl.textContent = note;
+  cont.hidden = !allowContinue;
+  root.hidden = false;
+  return new Promise((resolve) => {
+    const finish = (ok) => {
+      form.removeEventListener("submit", onSubmit);
+      cancel.removeEventListener("click", onCancel);
+      root.hidden = true;
+      resolve(ok);
+    };
+    const onSubmit = (event) => {
+      event.preventDefault();
+      if (allowContinue) finish(true);
+    };
+    const onCancel = () => finish(false);
+    form.addEventListener("submit", onSubmit);
+    cancel.addEventListener("click", onCancel);
+  });
+}
+
+async function deleteUploadedPdfs(apiUrl, keys) {
+  const errors = [];
+  for (const key of keys) {
+    const res = await authFetch(`${apiUrl}uploads?key=${encodeURIComponent(key)}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      errors.push(data.error || key);
+    }
+  }
+  if (errors.length) throw new Error(errors[0]);
+}
+
 async function uploadPdfsToArchive(files) {
   stopOcrPoll();
   const nameInput = document.getElementById("pdfsearch-add-box-name");
@@ -1912,11 +1985,11 @@ async function uploadPdfsToArchive(files) {
   if (uploadInput) uploadInput.disabled = true;
   if (uploadBtn) uploadBtn.disabled = true;
   const apiUrl = await getPdfSearchApiUrl();
-  const uploadedKeys = [];
+  const uploaded = [];
   try {
     for (const file of pdfs) {
       const key = `${folder}/${safePdfFilename(file.name)}`;
-      uploadedKeys.push(key);
+      uploaded.push({ file, key });
       const partCount = Math.max(1, Math.ceil(file.size / (8 * 1024 * 1024)));
       console.log("[ancestry-upload] begin", {
         file: file.name,
@@ -1984,9 +2057,55 @@ async function uploadPdfsToArchive(files) {
       });
       console.log("[ancestry-upload] finished", { file: file.name, key });
     }
-    setUploadStatus("Uploaded. Waiting for OCR to start…");
+    setUploadStatus("Uploaded. Checking the reading cost…");
+    const counted = [];
+    for (const row of uploaded) counted.push({ ...row, pages: await countPdfPages(row.file) });
+    const unreadable = counted.filter((row) => row.pages < 1);
+    if (unreadable.length) {
+      const names = unreadable.map((row) => row.file.name).join(", ");
+      await confirmIngestCost({
+        title: "Couldn't price this upload",
+        body: `<p>Page count couldn't be read for ${escapeHtml(names)}.</p>`,
+        note: "Cancel removes this upload. Nothing has been read yet.",
+        allowContinue: false,
+      });
+      await deleteUploadedPdfs(apiUrl, counted.map((row) => row.key));
+      setUploadStatus("Removed. Those PDFs were not read.");
+      return;
+    }
+    const estimateRes = await authFetch(`${apiUrl}uploads/estimate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: counted.map((row) => ({ key: row.key, pages: row.pages })),
+      }),
+    });
+    const estimate = await estimateRes.json().catch(() => ({}));
+    if (!estimateRes.ok) throw new Error(estimate.error || `HTTP ${estimateRes.status}`);
+    const namesByKey = new Map(counted.map((row) => [row.key, row.file.name]));
+    const proceed = await confirmIngestCost({
+      title: counted.length === 1 ? "Read this PDF?" : "Read these PDFs?",
+      body: costPromptHtml(estimate, namesByKey),
+      note: "Textract reads every page at $1.50 per 1,000 pages. Nova Lite then writes one short description from at most 8,000 characters, and the reply stops at 120 tokens. Cancel removes this upload.",
+      allowContinue: true,
+    });
+    const keys = counted.map((row) => row.key);
+    if (!proceed) {
+      await deleteUploadedPdfs(apiUrl, keys);
+      setUploadStatus("Removed. Those PDFs were not read.");
+      return;
+    }
+    setUploadStatus("Starting OCR…");
+    const startedRes = await authFetch(`${apiUrl}uploads/ocr`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keys }),
+    });
+    const started = await startedRes.json().catch(() => ({}));
+    if (!startedRes.ok) throw new Error(started.error || `HTTP ${startedRes.status}`);
+    if (started.failed?.length) throw new Error("OCR did not start.");
     setAddBoxName(folder);
-    startOcrPoll(uploadedKeys);
+    startOcrPoll(keys);
   } catch (err) {
     if (isAuthError(err)) {
       await initPdfSearch();
