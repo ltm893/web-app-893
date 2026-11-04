@@ -28,6 +28,7 @@ import {
   mineLibraryKeys,
   mineRootPrefix,
   musicDirectUploadError,
+  folderActionItems,
   libraryAddMenuItems,
   libraryFileMenuItems,
   listingLibrary,
@@ -2085,16 +2086,20 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
       const name = f.key.replace(prefix, "").replace("/", "");
       const reserved = isReservedSharedTopFolder(f.key);
       const folderEnc = encodeURIComponent(f.key);
-      const folderItems = [];
-      if (!downloadMode && showFolderRenameButton(currentTab, f.key, currentUserId)) folderItems.push("Rename");
-      if (!downloadMode && showShareWithAll(currentTab, f.key, currentUserId, { hasFiles: f.hasFiles, hasSubFolders: f.hasSubFolders })) folderItems.push("Share on DLIV");
-      if (!downloadMode && canMoveLibraryItem(currentTab, f.key, currentUserId)) folderItems.push("Move");
-      if (!f.hasSubFolders && f.hasFiles) folderItems.push("Empty");
-      else if (!f.hasSubFolders && !reserved) folderItems.push("Remove");
+      const folderItems = folderActionItems({
+        downloadMode,
+        canRename: showFolderRenameButton(currentTab, f.key, currentUserId),
+        canShare: showShareWithAll(currentTab, f.key, currentUserId, { hasFiles: f.hasFiles, hasSubFolders: f.hasSubFolders }),
+        canMove: canMoveLibraryItem(currentTab, f.key, currentUserId),
+        hasFiles: f.hasFiles,
+        hasSubFolders: f.hasSubFolders,
+        reserved,
+      });
       const folderMenu = folderItems.length
         ? `<div class="file-menu">
             <button type="button" class="file-menu-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Folder" onclick="toggleFileMenu(event, '${folderEnc}')">⋯</button>
             <div class="file-menu-list" data-key="${folderEnc}" hidden>
+              ${folderItems.includes("Download") ? `<button type="button" onclick="downloadFolderFromMenu('${folderEnc}')">Download</button>` : ""}
               ${folderItems.includes("Rename") ? `<button type="button" onclick="renameFolderFromMenu('${folderEnc}')">Rename</button>` : ""}
               ${folderItems.includes("Share on DLIV") ? `<button type="button" onclick="shareWithAllFromMenu('${folderEnc}')">Share on DLIV</button>` : ""}
               ${folderItems.includes("Move") ? `<button type="button" onclick="moveFromMenu('${folderEnc}')">Move</button>` : ""}
@@ -3429,33 +3434,72 @@ window.checkAll = function () {
   document.getElementById("check-all-btn").textContent = allChecked ? "☑ Check All" : "☐ Uncheck All";
 };
 
+async function downloadFileKeys(keys, onName) {
+  for (const key of keys) {
+    const name = fileNameFromKey(key);
+    if (onName) onName(name);
+    try {
+      const url = await getPresignedUrl(key);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = name;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      await new Promise((r) => setTimeout(r, 1000));
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      if (isAuthError(err)) throw err;
+      console.error(`Failed to download ${name}:`, err);
+    }
+  }
+}
+
 window.downloadSelected = async function () {
   const checkboxes = [...document.querySelectorAll(".file-checkbox:checked")];
   if (!checkboxes.length) { alert("No files selected."); return; }
   const btn = document.getElementById("download-selected-btn");
   btn.disabled = true;
-  for (const cb of checkboxes) {
-    const key  = cb.dataset.key;
-    const name = key.split("/").pop();
-    btn.textContent = `Downloading ${name}…`;
-    try {
-      const url = await getPresignedUrl(key);
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const blob    = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl; a.download = name; a.style.display = "none";
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      await new Promise((r) => setTimeout(r, 1000));
-      URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      if (isAuthError(err)) { handleSessionExpired(); return; }
-      console.error(`Failed to download ${name}:`, err);
-    }
+  try {
+    await downloadFileKeys(checkboxes.map((cb) => cb.dataset.key), (name) => {
+      btn.textContent = `Downloading ${name}…`;
+    });
+  } catch (err) {
+    if (isAuthError(err)) { handleSessionExpired(); return; }
   }
   btn.textContent = "⬇ Download Selected";
   btn.disabled = false;
+};
+
+window.downloadFolderFromMenu = async function (encodedKey) {
+  closeVideosMenus();
+  const prefix = decodeURIComponent(encodedKey || "");
+  const folderName = folderNameFromKey(prefix);
+  if (!(await ensureSignedIn())) { handleSessionExpired(); return; }
+  await withListOpProgress("Downloading", async () => {
+    try {
+      const apiUrl = await getDropboxApiUrl();
+      const res = await authFetch(`${apiUrl}files?prefix=${encodeURIComponent(prefix)}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json().catch(() => ({}));
+      const keys = (Array.isArray(data.files) ? data.files : [])
+        .map((file) => file.key)
+        .filter((key) => key && !key.endsWith("/") && !isCaptionsSidecar(key));
+      if (!keys.length) {
+        alert(`"${folderName}" has no files to download.`);
+        return;
+      }
+      await downloadFileKeys(keys, (name) => showListOpProgress(`Downloading ${name}…`));
+    } catch (err) {
+      if (isAuthError(err)) { handleSessionExpired(); return; }
+      alert("Could not download: " + (err.message || "Error"));
+    }
+  });
 };
 
 // ── Delete / folder ops ───────────────────────────────────────────────────────

@@ -213,6 +213,25 @@ export function libraryFileMenuItems({ library, convertOn, isMp4, downloadMode, 
   return items;
 }
 
+export function folderActionItems({
+  downloadMode = false,
+  canRename = false,
+  canShare = false,
+  canMove = false,
+  hasFiles = false,
+  hasSubFolders = false,
+  reserved = false,
+} = {}) {
+  const items = [];
+  if (!downloadMode && hasFiles) items.push("Download");
+  if (!downloadMode && canRename) items.push("Rename");
+  if (!downloadMode && canShare) items.push("Share on DLIV");
+  if (!downloadMode && canMove) items.push("Move");
+  if (!hasSubFolders && hasFiles) items.push("Empty");
+  else if (!hasSubFolders && !reserved) items.push("Remove");
+  return items;
+}
+
 export function musicAlbumName(prefixOrKey) {
   const parts = String(prefixOrKey || "").split("/").filter(Boolean);
   const musicAt = parts.lastIndexOf("Music");

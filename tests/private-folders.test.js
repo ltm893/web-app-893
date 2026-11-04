@@ -8,6 +8,7 @@ import {
   showVideoFileEdits,
   compareLibraryFolders,
   isReservedLibraryFolder,
+  folderActionItems,
   libraryAddMenuItems,
   libraryFileMenuItems,
   listingLibrary,
@@ -268,6 +269,16 @@ test("Music and Photos album folders can be renamed; library roots cannot", () =
   assert.deepEqual(libraryFileMenuItems({
     library: "Photos", convertOn: false, isMp4: false, downloadMode: false, combineMode: false, canEdit: false, canRename: false,
   }), ["Remove"]);
+});
+
+test("a folder with files offers Download in Mine and All DLIV Users", () => {
+  assert.deepEqual(folderActionItems({ hasFiles: true, hasSubFolders: true, reserved: true }), ["Download"]);
+  assert.deepEqual(folderActionItems({
+    hasFiles: true, canRename: true, canShare: true, canMove: true,
+  }), ["Download", "Rename", "Share on DLIV", "Move", "Empty"]);
+  assert.deepEqual(folderActionItems({ hasFiles: false, hasSubFolders: false, reserved: true }), []);
+  assert.deepEqual(folderActionItems({ hasFiles: false, hasSubFolders: false }), ["Remove"]);
+  assert.deepEqual(folderActionItems({ downloadMode: true, hasFiles: true }), ["Empty"]);
 });
 
 test("library folders sort first as Music, Photos, Videos", () => {
