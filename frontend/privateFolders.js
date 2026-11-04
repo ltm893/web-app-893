@@ -76,6 +76,21 @@ export function showVideoEditControls(tab, prefix, userId, videoConvertOn) {
   return tab === "mine" && showVideoUploadButton(tab, prefix, userId, videoConvertOn);
 }
 
+const SHARED_VIDEO_FILE = /\.(mp4|m4v|mov|webm)$/i;
+
+export function isSharedVideoFile(key) {
+  const raw = String(key || "").replace(/^\/+/, "");
+  if (!SHARED_VIDEO_FILE.test(raw) || raw.endsWith("/")) return false;
+  if (!raw.startsWith("Videos/") || raw.startsWith("users/")) return false;
+  const parts = raw.split("/");
+  return parts.length >= 2 && parts.length <= 16 && parts.every((part) => part && part !== "." && part !== "..");
+}
+
+export function showVideoFileEdits(tab, prefix, userId, videoConvertOn) {
+  if (showVideoEditControls(tab, prefix, userId, videoConvertOn)) return true;
+  return !!videoConvertOn && tab === "shared" && listingLibrary(tab, prefix, userId) === "Videos";
+}
+
 export function showInlineVideoClip(tab, prefix, userId, videoConvertOn) {
   if (!videoConvertOn) return false;
   if (showVideoEditControls(tab, prefix, userId, videoConvertOn)) return true;
@@ -83,11 +98,32 @@ export function showInlineVideoClip(tab, prefix, userId, videoConvertOn) {
 }
 
 export function clipSaveNote(userId, sourceKey) {
-  const root = userId ? `users/${userId}/Videos/` : "";
-  if (root && String(sourceKey || "").startsWith(root)) {
+  const key = String(sourceKey || "");
+  const mine = userId ? `users/${userId}/Videos/` : "";
+  if ((mine && key.startsWith(mine)) || key.startsWith("Videos/")) {
     return "The new MP4 is saved in this folder. The original stays where it is.";
   }
   return "The new MP4 is saved in Mine → Videos. The original stays where it is.";
+}
+
+export function videoOutputLocation(userId, outputPrefix) {
+  const raw = String(outputPrefix || "");
+  const prefix = !raw || raw.endsWith("/") ? raw : `${raw}/`;
+  const sharedParts = prefix.startsWith("Videos/") ? prefix.slice("Videos/".length).split("/") : null;
+  if (sharedParts && sharedParts.every((part) => part !== "." && part !== "..")) {
+    return {
+      tab: "shared",
+      prefix,
+      rest: prefix.slice("Videos/".length).replace(/\/$/, ""),
+    };
+  }
+  const root = userId ? `users/${userId}/Videos/` : "";
+  const folder = root && prefix.startsWith(root) ? prefix : root;
+  return {
+    tab: "mine",
+    prefix: folder,
+    rest: root && folder.startsWith(root) ? folder.slice(root.length).replace(/\/$/, "") : "",
+  };
 }
 
 export function showVideosAddMenu(tab, prefix, userId, videoConvertOn) {
@@ -177,6 +213,25 @@ export function libraryFileMenuItems({ library, convertOn, isMp4, downloadMode, 
   return items;
 }
 
+export function folderActionItems({
+  downloadMode = false,
+  canRename = false,
+  canShare = false,
+  canMove = false,
+  hasFiles = false,
+  hasSubFolders = false,
+  reserved = false,
+} = {}) {
+  const items = [];
+  if (!downloadMode && hasFiles) items.push("Download");
+  if (!downloadMode && canRename) items.push("Rename");
+  if (!downloadMode && canShare) items.push("Share on DLIV");
+  if (!downloadMode && canMove) items.push("Move");
+  if (!hasSubFolders && hasFiles) items.push("Empty");
+  else if (!hasSubFolders && !reserved) items.push("Remove");
+  return items;
+}
+
 export function musicAlbumName(prefixOrKey) {
   const parts = String(prefixOrKey || "").split("/").filter(Boolean);
   const musicAt = parts.lastIndexOf("Music");
@@ -210,6 +265,7 @@ export function jobMusicFolderLabel(who, userId, job) {
 const RENAMEABLE_LIBRARY_FOLDERS = ["Music/", "Photos/"];
 
 export function canMoveLibraryItem(tab, key, userId) {
+  if (tab === "shared") return isSharedVideoFile(key);
   if (tab !== "mine" || !userId) return false;
   const raw = String(key || "").replace(/^\/+/, "");
   const home = mineRootPrefix(userId);
@@ -222,6 +278,17 @@ export function moveDestinationError(fromKey, destPrefix, userId) {
   const raw = String(fromKey || "").replace(/^\/+/, "");
   const home = mineRootPrefix(userId);
   let dest = String(destPrefix || "").replace(/^\/+/, "").trim();
+  if (isSharedVideoFile(raw)) {
+    if (!dest) return "Choose a folder in All DLIV Users → Videos.";
+    if (!dest.endsWith("/")) dest += "/";
+    const parts = dest.slice(0, -1).split("/");
+    if (!dest.startsWith("Videos/") || parts.some((part) => !part || part === "." || part === "..")) {
+      return "Choose a folder in All DLIV Users → Videos.";
+    }
+    const base = raw.split("/").filter(Boolean).pop() || "";
+    if (`${dest}${base}` === raw) return "Already in this folder.";
+    return "";
+  }
   if (!home || !raw.startsWith(home)) return "Move files and folders from your library.";
   if (!dest) return "Choose a folder in your library.";
   if (!dest.endsWith("/")) dest += "/";
@@ -237,7 +304,8 @@ export function moveDestinationError(fromKey, destPrefix, userId) {
 }
 
 export function canRenameLibraryKey(key) {
-  return String(key || "").replace(/^\/+/, "").startsWith("users/");
+  const raw = String(key || "").replace(/^\/+/, "");
+  return raw.startsWith("users/") || isSharedVideoFile(raw);
 }
 
 export function showFolderRenameButton(tab, folderKey, userId) {

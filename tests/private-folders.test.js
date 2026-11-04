@@ -4,8 +4,11 @@ import {
   LIBRARY_FOLDER_NAMES,
   canMoveLibraryItem,
   canRenameLibraryKey,
+  isSharedVideoFile,
+  showVideoFileEdits,
   compareLibraryFolders,
   isReservedLibraryFolder,
+  folderActionItems,
   libraryAddMenuItems,
   libraryFileMenuItems,
   listingLibrary,
@@ -20,6 +23,7 @@ import {
   showShareWithAll,
   showStandaloneFolderButton,
   clipSaveNote,
+  videoOutputLocation,
   showInlineVideoClip,
   showVideoEditControls,
   showVideoUploadButton,
@@ -98,8 +102,18 @@ test("Videos has Upload Video but not + File; Music and Photos have + File only"
   );
   assert.equal(
     clipSaveNote(sub, "Videos/Wenner2026/Camping/Race.mp4"),
-    "The new MP4 is saved in Mine → Videos. The original stays where it is.",
+    "The new MP4 is saved in this folder. The original stays where it is.",
   );
+  assert.deepEqual(videoOutputLocation(sub, "Videos/Wenner2026/Camping/"), {
+    tab: "shared",
+    prefix: "Videos/Wenner2026/Camping/",
+    rest: "Wenner2026/Camping",
+  });
+  assert.deepEqual(videoOutputLocation(sub, `users/${sub}/Videos/trips/`), {
+    tab: "mine",
+    prefix: `users/${sub}/Videos/trips/`,
+    rest: "trips",
+  });
   assert.equal(showVideosAddMenu("mine", videos, sub, true), true);
   assert.equal(showVideosAddMenu("mine", `${videos}clips/`, sub, true), true);
   assert.equal(showVideosAddMenu("mine", videos, sub, false), false);
@@ -177,10 +191,22 @@ test("Move stays inside the user library and leaves Music, Photos, and Videos in
   assert.equal(canMoveLibraryItem("mine", videos, sub), false);
   assert.equal(canMoveLibraryItem("mine", `${home}Notes/`, sub), true);
   assert.equal(canMoveLibraryItem("shared", file, sub), false);
+  assert.equal(canMoveLibraryItem("shared", "Videos/TaylorsGang/SlateShadows.mp4", sub), true);
+  assert.equal(canMoveLibraryItem("shared", "Videos/TaylorsGang/", sub), false);
+  assert.equal(canMoveLibraryItem("shared", "Photos/Family/a.jpg", sub), false);
   assert.equal(moveDestinationError(file, `${home}Photos/Trip/`, sub), "");
   assert.equal(moveDestinationError(file, folder, sub), "Already in this folder.");
   assert.equal(moveDestinationError(folder, `${folder}Inside/`, sub), "Choose a folder that is not inside this one.");
-  assert.equal(moveDestinationError("Videos/clip.mp4", home, sub), "Move files and folders from your library.");
+  assert.equal(moveDestinationError("Videos/TaylorsGang/SlateShadows.mp4", "Videos/MelchiorreMovies/", sub), "");
+  assert.equal(moveDestinationError("Videos/TaylorsGang/SlateShadows.mp4", "Videos/TaylorsGang/", sub), "Already in this folder.");
+  assert.equal(moveDestinationError("Videos/clip.mp4", home, sub), "Choose a folder in All DLIV Users → Videos.");
+  assert.equal(showVideoFileEdits("shared", "Videos/TaylorsGang/", sub, true), true);
+  assert.equal(showVideoFileEdits("shared", "Photos/Family/", sub, true), false);
+  assert.equal(isSharedVideoFile("Videos/TaylorsGang/SlateShadows.mp4"), true);
+  assert.deepEqual(libraryFileMenuItems({
+    library: "Videos", convertOn: true, isMp4: true, downloadMode: false, combineMode: false,
+    canEdit: true, canShare: false, canRename: true, canMove: true,
+  }), ["Clip", "Rename", "Combine", "Move", "Remove"]);
   assert.deepEqual(libraryFileMenuItems({
     library: "Videos", convertOn: false, isMp4: false, downloadMode: false, combineMode: false, canEdit: false, canMove: true,
   }), ["Rename", "Move", "Remove"]);
@@ -238,10 +264,21 @@ test("Music and Photos album folders can be renamed; library roots cannot", () =
   assert.equal(showFolderRenameButton("mine", `${videos}clips/`, sub), false);
   assert.equal(canRenameLibraryKey(`${photos}Family/pic.jpg`), true);
   assert.equal(canRenameLibraryKey("Photos/Wenner2026/Family/pic.jpg"), false);
-  assert.equal(canRenameLibraryKey("Videos/clip.mp4"), false);
+  assert.equal(canRenameLibraryKey("Videos/clip.mp4"), true);
+  assert.equal(canRenameLibraryKey("Videos/TaylorsGang/"), false);
   assert.deepEqual(libraryFileMenuItems({
     library: "Photos", convertOn: false, isMp4: false, downloadMode: false, combineMode: false, canEdit: false, canRename: false,
   }), ["Remove"]);
+});
+
+test("a folder with files offers Download in Mine and All DLIV Users", () => {
+  assert.deepEqual(folderActionItems({ hasFiles: true, hasSubFolders: true, reserved: true }), ["Download"]);
+  assert.deepEqual(folderActionItems({
+    hasFiles: true, canRename: true, canShare: true, canMove: true,
+  }), ["Download", "Rename", "Share on DLIV", "Move", "Empty"]);
+  assert.deepEqual(folderActionItems({ hasFiles: false, hasSubFolders: false, reserved: true }), []);
+  assert.deepEqual(folderActionItems({ hasFiles: false, hasSubFolders: false }), ["Remove"]);
+  assert.deepEqual(folderActionItems({ downloadMode: true, hasFiles: true }), ["Empty"]);
 });
 
 test("library folders sort first as Music, Photos, Videos", () => {

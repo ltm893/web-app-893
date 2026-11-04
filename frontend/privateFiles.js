@@ -22,11 +22,13 @@ import {
   compareLibraryFolders,
   moveDestinationError,
   isReservedLibraryFolder,
+  isSharedVideoFile,
   jobMusicFolderLabel,
   jobMusicFolderPrefix,
   mineLibraryKeys,
   mineRootPrefix,
   musicDirectUploadError,
+  folderActionItems,
   libraryAddMenuItems,
   libraryFileMenuItems,
   listingLibrary,
@@ -39,7 +41,9 @@ import {
   showStandaloneFolderButton,
   clipSaveNote,
   showInlineVideoClip,
+  videoOutputLocation,
   showVideoEditControls,
+  showVideoFileEdits,
   showVideoUploadButton,
   videoConvertOutputPrefix,
 } from "./privateFolders.js";
@@ -335,7 +339,7 @@ function updateTabUI() {
 }
 
 function syncVideoEditControls() {
-  const show = showVideoEditControls(currentTab, currentPrefix, currentUserId, videoConvertOn);
+  const show = showVideoFileEdits(currentTab, currentPrefix, currentUserId, videoConvertOn);
   if (!show) {
     videoCombineMode = false;
     combinePrefillKeys.clear();
@@ -704,6 +708,14 @@ async function loadVideoJobs() {
   scheduleVideoPoll();
 }
 
+window.openSharedVideos = function (encodedPrefix) {
+  if (!currentUserId) return;
+  currentTab = "shared";
+  updateTabUI();
+  const loc = videoOutputLocation("", encodedPrefix ? decodeURIComponent(encodedPrefix) : "Videos/");
+  loadFiles(loc.tab === "shared" ? loc.prefix : "Videos/");
+};
+
 window.openMineVideos = function (encodedPrefix) {
   if (!currentUserId) return;
   currentTab = "mine";
@@ -740,29 +752,28 @@ function jobOutputIsMusic(job) {
   return prefix.includes("/Music/") || prefix.endsWith("Music/") || keys.some((key) => String(key).includes("/Music/"));
 }
 
-function jobVideoFolderPrefix(job) {
-  const root = currentUserId ? `users/${currentUserId}/Videos/` : "";
-  const prefix = String(job?.outputPrefix || "");
-  if (root && prefix.startsWith(root)) return prefix.endsWith("/") ? prefix : `${prefix}/`;
-  return root;
+function jobVideoLocation(job) {
+  return videoOutputLocation(currentUserId, job?.outputPrefix || "");
 }
 
 function jobOutputFolderLabel(job) {
   const who = currentUserLabel || "Mine";
   if (jobOutputIsMusic(job)) return jobMusicFolderLabel(who, currentUserId, job);
-  const prefix = jobVideoFolderPrefix(job);
-  const root = currentUserId ? `users/${currentUserId}/Videos/` : "";
-  const rest = root && prefix.startsWith(root) ? prefix.slice(root.length).replace(/\/$/, "") : "";
-  return rest ? `${who} → Videos → ${rest}` : `${who} → Videos`;
+  const loc = jobVideoLocation(job);
+  if (loc.tab === "shared") {
+    const shared = document.getElementById("tab-btn-shared")?.textContent?.trim() || "All users";
+    return loc.rest ? `${shared} → Videos → ${loc.rest}` : `${shared} → Videos`;
+  }
+  return loc.rest ? `${who} → Videos → ${loc.rest}` : `${who} → Videos`;
 }
 
 function jobOutputFolderAction(job) {
   if (jobOutputIsMusic(job)) {
     return `openMineMusic('${encodeURIComponent(jobMusicFolderPrefix(currentUserId, job))}'); return false;`;
   }
-  const prefix = jobVideoFolderPrefix(job);
-  const root = currentUserId ? `users/${currentUserId}/Videos/` : "";
-  if (prefix && prefix !== root) return `openMineVideos('${encodeURIComponent(prefix)}'); return false;`;
+  const loc = jobVideoLocation(job);
+  if (loc.tab === "shared") return `openSharedVideos('${encodeURIComponent(loc.prefix)}'); return false;`;
+  if (loc.prefix && loc.rest) return `openMineVideos('${encodeURIComponent(loc.prefix)}'); return false;`;
   return "openMineVideos(); return false;";
 }
 
@@ -1168,7 +1179,7 @@ function openVideoEditDialog(kind, keys, marked = {}) {
 }
 
 window.toggleVideoCombine = function () {
-  if (!showVideoEditControls(currentTab, currentPrefix, currentUserId, videoConvertOn)) return;
+  if (!showVideoFileEdits(currentTab, currentPrefix, currentUserId, videoConvertOn)) return;
   videoCombineMode = !videoCombineMode;
   if (!videoCombineMode) combinePrefillKeys.clear();
   if (videoCombineMode && downloadMode) {
@@ -1185,7 +1196,7 @@ window.toggleVideoCombine = function () {
 
 window.startCombineWith = function (encodedKey) {
   const key = decodeURIComponent(encodedKey || "");
-  if (!isMineMp4Key(key) || !showVideoEditControls(currentTab, currentPrefix, currentUserId, videoConvertOn)) return;
+  if (!isMineMp4Key(key) || !showVideoFileEdits(currentTab, currentPrefix, currentUserId, videoConvertOn)) return;
   closeVideosMenus();
   if (downloadMode) {
     downloadMode = false;
@@ -1772,6 +1783,11 @@ let movePickerPrefix = "";
 let movePickerGen = 0;
 
 function movePlaceLabel(prefix) {
+  if (String(prefix || "").startsWith("Videos/")) {
+    const shared = document.getElementById("tab-btn-shared")?.textContent?.trim() || "All users";
+    const rest = prefix.slice("Videos/".length).replace(/\/$/, "").split("/").filter(Boolean).join(" / ");
+    return rest ? `${shared} / Videos / ${rest}` : `${shared} / Videos`;
+  }
   const home = mineRootPrefix(currentUserId);
   if (!prefix || prefix === home) return currentUserLabel || "Home";
   const rest = prefix.startsWith(home) ? prefix.slice(home.length) : prefix;
@@ -1779,7 +1795,7 @@ function movePlaceLabel(prefix) {
 }
 
 function moveParentPrefix(prefix) {
-  const home = mineRootPrefix(currentUserId);
+  const home = String(moveSourceKey || "").startsWith("Videos/") ? "Videos/" : mineRootPrefix(currentUserId);
   if (!prefix || prefix === home || !prefix.startsWith(home)) return "";
   const trimmed = prefix.endsWith("/") ? prefix.slice(0, -1) : prefix;
   const parent = trimmed.slice(0, trimmed.lastIndexOf("/") + 1);
@@ -1841,7 +1857,7 @@ function openMovePicker(key) {
   const name = key.endsWith("/") ? folderNameFromKey(key) : fileNameFromKey(key);
   if (title) title.textContent = `Move "${name}"`;
   root.hidden = false;
-  renderMovePicker(mineRootPrefix(currentUserId));
+  renderMovePicker(String(key).startsWith("Videos/") ? "Videos/" : mineRootPrefix(currentUserId));
 }
 
 async function performMove(fromKey, destPrefix) {
@@ -2070,16 +2086,20 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
       const name = f.key.replace(prefix, "").replace("/", "");
       const reserved = isReservedSharedTopFolder(f.key);
       const folderEnc = encodeURIComponent(f.key);
-      const folderItems = [];
-      if (!downloadMode && showFolderRenameButton(currentTab, f.key, currentUserId)) folderItems.push("Rename");
-      if (!downloadMode && showShareWithAll(currentTab, f.key, currentUserId, { hasFiles: f.hasFiles, hasSubFolders: f.hasSubFolders })) folderItems.push("Share on DLIV");
-      if (!downloadMode && canMoveLibraryItem(currentTab, f.key, currentUserId)) folderItems.push("Move");
-      if (!f.hasSubFolders && f.hasFiles) folderItems.push("Empty");
-      else if (!f.hasSubFolders && !reserved) folderItems.push("Remove");
+      const folderItems = folderActionItems({
+        downloadMode,
+        canRename: showFolderRenameButton(currentTab, f.key, currentUserId),
+        canShare: showShareWithAll(currentTab, f.key, currentUserId, { hasFiles: f.hasFiles, hasSubFolders: f.hasSubFolders }),
+        canMove: canMoveLibraryItem(currentTab, f.key, currentUserId),
+        hasFiles: f.hasFiles,
+        hasSubFolders: f.hasSubFolders,
+        reserved,
+      });
       const folderMenu = folderItems.length
         ? `<div class="file-menu">
             <button type="button" class="file-menu-toggle" aria-haspopup="true" aria-expanded="false" aria-label="Folder" onclick="toggleFileMenu(event, '${folderEnc}')">⋯</button>
             <div class="file-menu-list" data-key="${folderEnc}" hidden>
+              ${folderItems.includes("Download") ? `<button type="button" onclick="downloadFolderFromMenu('${folderEnc}')">Download</button>` : ""}
               ${folderItems.includes("Rename") ? `<button type="button" onclick="renameFolderFromMenu('${folderEnc}')">Rename</button>` : ""}
               ${folderItems.includes("Share on DLIV") ? `<button type="button" onclick="shareWithAllFromMenu('${folderEnc}')">Share on DLIV</button>` : ""}
               ${folderItems.includes("Move") ? `<button type="button" onclick="moveFromMenu('${folderEnc}')">Move</button>` : ""}
@@ -2094,7 +2114,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
       </li>`;
     });
 
-    const showEdit = showVideoEditControls(currentTab, currentPrefix, currentUserId, videoConvertOn);
+    const showEdit = showVideoFileEdits(currentTab, currentPrefix, currentUserId, videoConvertOn);
     const useFileMenu = showLibraryFileMenu(currentTab, currentPrefix, currentUserId);
     const listingLib = listingLibrary(currentTab, currentPrefix, currentUserId);
     const fileHtml = files.map((f) => {
@@ -2121,7 +2141,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
         combineMode: videoCombineMode,
         canEdit,
         canShare: showShareWithAll(currentTab, f.key, currentUserId),
-        canRename: currentTab !== "shared",
+        canRename: currentTab !== "shared" || isSharedVideoFile(f.key),
         canMove: canMoveLibraryItem(currentTab, f.key, currentUserId),
       }) : (!downloadMode && !videoCombineMode && currentTab !== "shared"
         ? (canMoveLibraryItem(currentTab, f.key, currentUserId) ? ["Rename", "Move"] : ["Rename"])
@@ -3414,33 +3434,72 @@ window.checkAll = function () {
   document.getElementById("check-all-btn").textContent = allChecked ? "☑ Check All" : "☐ Uncheck All";
 };
 
+async function downloadFileKeys(keys, onName) {
+  for (const key of keys) {
+    const name = fileNameFromKey(key);
+    if (onName) onName(name);
+    try {
+      const url = await getPresignedUrl(key);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = name;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      await new Promise((r) => setTimeout(r, 1000));
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      if (isAuthError(err)) throw err;
+      console.error(`Failed to download ${name}:`, err);
+    }
+  }
+}
+
 window.downloadSelected = async function () {
   const checkboxes = [...document.querySelectorAll(".file-checkbox:checked")];
   if (!checkboxes.length) { alert("No files selected."); return; }
   const btn = document.getElementById("download-selected-btn");
   btn.disabled = true;
-  for (const cb of checkboxes) {
-    const key  = cb.dataset.key;
-    const name = key.split("/").pop();
-    btn.textContent = `Downloading ${name}…`;
-    try {
-      const url = await getPresignedUrl(key);
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const blob    = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl; a.download = name; a.style.display = "none";
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      await new Promise((r) => setTimeout(r, 1000));
-      URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      if (isAuthError(err)) { handleSessionExpired(); return; }
-      console.error(`Failed to download ${name}:`, err);
-    }
+  try {
+    await downloadFileKeys(checkboxes.map((cb) => cb.dataset.key), (name) => {
+      btn.textContent = `Downloading ${name}…`;
+    });
+  } catch (err) {
+    if (isAuthError(err)) { handleSessionExpired(); return; }
   }
   btn.textContent = "⬇ Download Selected";
   btn.disabled = false;
+};
+
+window.downloadFolderFromMenu = async function (encodedKey) {
+  closeVideosMenus();
+  const prefix = decodeURIComponent(encodedKey || "");
+  const folderName = folderNameFromKey(prefix);
+  if (!(await ensureSignedIn())) { handleSessionExpired(); return; }
+  await withListOpProgress("Downloading", async () => {
+    try {
+      const apiUrl = await getDropboxApiUrl();
+      const res = await authFetch(`${apiUrl}files?prefix=${encodeURIComponent(prefix)}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json().catch(() => ({}));
+      const keys = (Array.isArray(data.files) ? data.files : [])
+        .map((file) => file.key)
+        .filter((key) => key && !key.endsWith("/") && !isCaptionsSidecar(key));
+      if (!keys.length) {
+        alert(`"${folderName}" has no files to download.`);
+        return;
+      }
+      await downloadFileKeys(keys, (name) => showListOpProgress(`Downloading ${name}…`));
+    } catch (err) {
+      if (isAuthError(err)) { handleSessionExpired(); return; }
+      alert("Could not download: " + (err.message || "Error"));
+    }
+  });
 };
 
 // ── Delete / folder ops ───────────────────────────────────────────────────────
