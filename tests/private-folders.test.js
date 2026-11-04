@@ -19,6 +19,8 @@ import {
   showLibraryFileMenu,
   showShareWithAll,
   showStandaloneFolderButton,
+  clipSaveNote,
+  showInlineVideoClip,
   showVideoEditControls,
   showVideoUploadButton,
   videoConvertOutputPrefix,
@@ -83,6 +85,21 @@ test("Videos has Upload Video but not + File; Music and Photos have + File only"
   assert.equal(showVideoEditControls("video", videos, sub, true), false);
   assert.equal(showVideoEditControls("mine", photos, sub, true), false);
   assert.equal(showVideoEditControls("shared", "Videos/", sub, true), false);
+  assert.equal(showInlineVideoClip("mine", videos, sub, true), true);
+  assert.equal(showInlineVideoClip("mine", videos, sub, false), false);
+  assert.equal(showInlineVideoClip("shared", "Videos/", sub, true), true);
+  assert.equal(showInlineVideoClip("shared", "Videos/Wenner2026/Camping/", sub, true), true);
+  assert.equal(showInlineVideoClip("shared", "Videos/Wenner2026/", sub, false), false);
+  assert.equal(showInlineVideoClip("shared", "Photos/Family/", sub, true), false);
+  assert.equal(showInlineVideoClip("mine", photos, sub, true), false);
+  assert.equal(
+    clipSaveNote(sub, `users/${sub}/Videos/trips/Race.mp4`),
+    "The new MP4 is saved in this folder. The original stays where it is.",
+  );
+  assert.equal(
+    clipSaveNote(sub, "Videos/Wenner2026/Camping/Race.mp4"),
+    "The new MP4 is saved in Mine → Videos. The original stays where it is.",
+  );
   assert.equal(showVideosAddMenu("mine", videos, sub, true), true);
   assert.equal(showVideosAddMenu("mine", `${videos}clips/`, sub, true), true);
   assert.equal(showVideosAddMenu("mine", videos, sub, false), false);

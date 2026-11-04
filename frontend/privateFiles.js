@@ -37,6 +37,8 @@ import {
   showLibraryFileMenu,
   showShareWithAll,
   showStandaloneFolderButton,
+  clipSaveNote,
+  showInlineVideoClip,
   showVideoEditControls,
   showVideoUploadButton,
   videoConvertOutputPrefix,
@@ -1151,7 +1153,7 @@ function openVideoEditDialog(kind, keys, marked = {}) {
   if (note) {
     note.textContent = kind === "combine"
       ? "The new MP4 plays in this order. Originals stay where they are."
-      : "The new MP4 is saved in this folder. The original stays where it is.";
+      : clipSaveNote(currentUserId, videoEditKeys[0]);
   }
   if (start) start.value = marked.start || "";
   if (end) end.value = marked.end || "";
@@ -2898,7 +2900,7 @@ let inlineClipStart = null;
 let inlineClipEnd = null;
 
 function canClipInlineVideo(key) {
-  return showVideoEditControls(currentTab, currentPrefix, currentUserId, videoConvertOn) && isMineMp4Key(key);
+  return showInlineVideoClip(currentTab, currentPrefix, currentUserId, videoConvertOn) && isMineMp4Key(key);
 }
 
 function setInlineClipError(message) {

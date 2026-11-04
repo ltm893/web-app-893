@@ -76,6 +76,20 @@ export function showVideoEditControls(tab, prefix, userId, videoConvertOn) {
   return tab === "mine" && showVideoUploadButton(tab, prefix, userId, videoConvertOn);
 }
 
+export function showInlineVideoClip(tab, prefix, userId, videoConvertOn) {
+  if (!videoConvertOn) return false;
+  if (showVideoEditControls(tab, prefix, userId, videoConvertOn)) return true;
+  return tab === "shared" && listingLibrary(tab, prefix, userId) === "Videos";
+}
+
+export function clipSaveNote(userId, sourceKey) {
+  const root = userId ? `users/${userId}/Videos/` : "";
+  if (root && String(sourceKey || "").startsWith(root)) {
+    return "The new MP4 is saved in this folder. The original stays where it is.";
+  }
+  return "The new MP4 is saved in Mine → Videos. The original stays where it is.";
+}
+
 export function showVideosAddMenu(tab, prefix, userId, videoConvertOn) {
   return listingLibrary(tab, prefix, userId) === "Videos" && tab === "mine" && !!videoConvertOn;
 }
