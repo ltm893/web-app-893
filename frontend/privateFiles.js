@@ -22,6 +22,7 @@ import {
   compareLibraryFolders,
   moveDestinationError,
   isReservedLibraryFolder,
+  isSharedVideoFile,
   jobMusicFolderLabel,
   jobMusicFolderPrefix,
   mineLibraryKeys,
@@ -39,7 +40,9 @@ import {
   showStandaloneFolderButton,
   clipSaveNote,
   showInlineVideoClip,
+  videoOutputLocation,
   showVideoEditControls,
+  showVideoFileEdits,
   showVideoUploadButton,
   videoConvertOutputPrefix,
 } from "./privateFolders.js";
@@ -335,7 +338,7 @@ function updateTabUI() {
 }
 
 function syncVideoEditControls() {
-  const show = showVideoEditControls(currentTab, currentPrefix, currentUserId, videoConvertOn);
+  const show = showVideoFileEdits(currentTab, currentPrefix, currentUserId, videoConvertOn);
   if (!show) {
     videoCombineMode = false;
     combinePrefillKeys.clear();
@@ -704,6 +707,14 @@ async function loadVideoJobs() {
   scheduleVideoPoll();
 }
 
+window.openSharedVideos = function (encodedPrefix) {
+  if (!currentUserId) return;
+  currentTab = "shared";
+  updateTabUI();
+  const loc = videoOutputLocation("", encodedPrefix ? decodeURIComponent(encodedPrefix) : "Videos/");
+  loadFiles(loc.tab === "shared" ? loc.prefix : "Videos/");
+};
+
 window.openMineVideos = function (encodedPrefix) {
   if (!currentUserId) return;
   currentTab = "mine";
@@ -740,29 +751,28 @@ function jobOutputIsMusic(job) {
   return prefix.includes("/Music/") || prefix.endsWith("Music/") || keys.some((key) => String(key).includes("/Music/"));
 }
 
-function jobVideoFolderPrefix(job) {
-  const root = currentUserId ? `users/${currentUserId}/Videos/` : "";
-  const prefix = String(job?.outputPrefix || "");
-  if (root && prefix.startsWith(root)) return prefix.endsWith("/") ? prefix : `${prefix}/`;
-  return root;
+function jobVideoLocation(job) {
+  return videoOutputLocation(currentUserId, job?.outputPrefix || "");
 }
 
 function jobOutputFolderLabel(job) {
   const who = currentUserLabel || "Mine";
   if (jobOutputIsMusic(job)) return jobMusicFolderLabel(who, currentUserId, job);
-  const prefix = jobVideoFolderPrefix(job);
-  const root = currentUserId ? `users/${currentUserId}/Videos/` : "";
-  const rest = root && prefix.startsWith(root) ? prefix.slice(root.length).replace(/\/$/, "") : "";
-  return rest ? `${who} → Videos → ${rest}` : `${who} → Videos`;
+  const loc = jobVideoLocation(job);
+  if (loc.tab === "shared") {
+    const shared = document.getElementById("tab-btn-shared")?.textContent?.trim() || "All users";
+    return loc.rest ? `${shared} → Videos → ${loc.rest}` : `${shared} → Videos`;
+  }
+  return loc.rest ? `${who} → Videos → ${loc.rest}` : `${who} → Videos`;
 }
 
 function jobOutputFolderAction(job) {
   if (jobOutputIsMusic(job)) {
     return `openMineMusic('${encodeURIComponent(jobMusicFolderPrefix(currentUserId, job))}'); return false;`;
   }
-  const prefix = jobVideoFolderPrefix(job);
-  const root = currentUserId ? `users/${currentUserId}/Videos/` : "";
-  if (prefix && prefix !== root) return `openMineVideos('${encodeURIComponent(prefix)}'); return false;`;
+  const loc = jobVideoLocation(job);
+  if (loc.tab === "shared") return `openSharedVideos('${encodeURIComponent(loc.prefix)}'); return false;`;
+  if (loc.prefix && loc.rest) return `openMineVideos('${encodeURIComponent(loc.prefix)}'); return false;`;
   return "openMineVideos(); return false;";
 }
 
@@ -1168,7 +1178,7 @@ function openVideoEditDialog(kind, keys, marked = {}) {
 }
 
 window.toggleVideoCombine = function () {
-  if (!showVideoEditControls(currentTab, currentPrefix, currentUserId, videoConvertOn)) return;
+  if (!showVideoFileEdits(currentTab, currentPrefix, currentUserId, videoConvertOn)) return;
   videoCombineMode = !videoCombineMode;
   if (!videoCombineMode) combinePrefillKeys.clear();
   if (videoCombineMode && downloadMode) {
@@ -1185,7 +1195,7 @@ window.toggleVideoCombine = function () {
 
 window.startCombineWith = function (encodedKey) {
   const key = decodeURIComponent(encodedKey || "");
-  if (!isMineMp4Key(key) || !showVideoEditControls(currentTab, currentPrefix, currentUserId, videoConvertOn)) return;
+  if (!isMineMp4Key(key) || !showVideoFileEdits(currentTab, currentPrefix, currentUserId, videoConvertOn)) return;
   closeVideosMenus();
   if (downloadMode) {
     downloadMode = false;
@@ -1772,6 +1782,11 @@ let movePickerPrefix = "";
 let movePickerGen = 0;
 
 function movePlaceLabel(prefix) {
+  if (String(prefix || "").startsWith("Videos/")) {
+    const shared = document.getElementById("tab-btn-shared")?.textContent?.trim() || "All users";
+    const rest = prefix.slice("Videos/".length).replace(/\/$/, "").split("/").filter(Boolean).join(" / ");
+    return rest ? `${shared} / Videos / ${rest}` : `${shared} / Videos`;
+  }
   const home = mineRootPrefix(currentUserId);
   if (!prefix || prefix === home) return currentUserLabel || "Home";
   const rest = prefix.startsWith(home) ? prefix.slice(home.length) : prefix;
@@ -1779,7 +1794,7 @@ function movePlaceLabel(prefix) {
 }
 
 function moveParentPrefix(prefix) {
-  const home = mineRootPrefix(currentUserId);
+  const home = String(moveSourceKey || "").startsWith("Videos/") ? "Videos/" : mineRootPrefix(currentUserId);
   if (!prefix || prefix === home || !prefix.startsWith(home)) return "";
   const trimmed = prefix.endsWith("/") ? prefix.slice(0, -1) : prefix;
   const parent = trimmed.slice(0, trimmed.lastIndexOf("/") + 1);
@@ -1841,7 +1856,7 @@ function openMovePicker(key) {
   const name = key.endsWith("/") ? folderNameFromKey(key) : fileNameFromKey(key);
   if (title) title.textContent = `Move "${name}"`;
   root.hidden = false;
-  renderMovePicker(mineRootPrefix(currentUserId));
+  renderMovePicker(String(key).startsWith("Videos/") ? "Videos/" : mineRootPrefix(currentUserId));
 }
 
 async function performMove(fromKey, destPrefix) {
@@ -2094,7 +2109,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
       </li>`;
     });
 
-    const showEdit = showVideoEditControls(currentTab, currentPrefix, currentUserId, videoConvertOn);
+    const showEdit = showVideoFileEdits(currentTab, currentPrefix, currentUserId, videoConvertOn);
     const useFileMenu = showLibraryFileMenu(currentTab, currentPrefix, currentUserId);
     const listingLib = listingLibrary(currentTab, currentPrefix, currentUserId);
     const fileHtml = files.map((f) => {
@@ -2121,7 +2136,7 @@ async function loadFiles(prefix, { keepVisibleList = false, skipRenderWhen = nul
         combineMode: videoCombineMode,
         canEdit,
         canShare: showShareWithAll(currentTab, f.key, currentUserId),
-        canRename: currentTab !== "shared",
+        canRename: currentTab !== "shared" || isSharedVideoFile(f.key),
         canMove: canMoveLibraryItem(currentTab, f.key, currentUserId),
       }) : (!downloadMode && !videoCombineMode && currentTab !== "shared"
         ? (canMoveLibraryItem(currentTab, f.key, currentUserId) ? ["Rename", "Move"] : ["Rename"])
