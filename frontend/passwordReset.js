@@ -23,6 +23,7 @@ export function mountPasswordReset(block) {
   panel.innerHTML = `
     <p class="auth-reset-note">We'll email a code to the address above. The new password needs 8 or more characters, with upper, lower, a number, and a symbol.</p>
     <button type="button" class="auth-signin-submit" data-reset-send>Email a code</button>
+    <p class="auth-reset-status" data-reset-status role="status"></p>
     <div data-reset-confirm hidden>
       <input type="text" data-reset-code inputmode="numeric" autocomplete="one-time-code" placeholder="Code from email" />
       <div class="auth-password-row">
@@ -34,8 +35,8 @@ export function mountPasswordReset(block) {
         <span class="auth-show-pwd" data-reset-show>Show</span>
       </div>
       <button type="button" class="auth-signin-submit" data-reset-save>Set new password</button>
+      <button type="button" class="auth-reset-link" data-reset-back>Use a different email</button>
     </div>
-    <p class="auth-reset-status" data-reset-status role="status"></p>
   `;
 
   const anchor = block.querySelector(".auth-sign-error");
@@ -47,16 +48,42 @@ export function mountPasswordReset(block) {
   }
 
   const status = panel.querySelector("[data-reset-status]");
+  const note = panel.querySelector(".auth-reset-note");
   const sendBtn = panel.querySelector("[data-reset-send]");
   const saveBtn = panel.querySelector("[data-reset-save]");
+  const backBtn = panel.querySelector("[data-reset-back]");
   const codeInput = panel.querySelector("[data-reset-code]");
   const nextInput = panel.querySelector("[data-reset-next]");
   const againInput = panel.querySelector("[data-reset-again]");
   const confirmBlock = panel.querySelector("[data-reset-confirm]");
+  const heading = block.querySelector("h3");
+  if (heading && !heading.dataset.signinTitle) heading.dataset.signinTitle = heading.textContent;
+
+  function restoreHeading() {
+    if (heading) heading.textContent = heading.dataset.signinTitle || "Sign In";
+  }
+
+  function showRequest() {
+    block.classList.remove("is-resetting");
+    panel.classList.remove("is-reset-done");
+    emailInput.readOnly = false;
+    restoreHeading();
+    confirmBlock.hidden = true;
+    sendBtn.hidden = false;
+    note.hidden = false;
+    panel.hidden = false;
+  }
 
   link.addEventListener("click", () => {
-    panel.hidden = !panel.hidden;
-    if (!panel.hidden) emailInput.focus();
+    const openRequest = panel.hidden || block.classList.contains("is-resetting") || panel.classList.contains("is-reset-done");
+    if (!openRequest) {
+      panel.hidden = true;
+      setStatus(status, "");
+      return;
+    }
+    showRequest();
+    setStatus(status, "");
+    emailInput.focus();
   });
 
   panel.addEventListener("keydown", (event) => {
@@ -80,6 +107,10 @@ export function mountPasswordReset(block) {
     sendBtn.disabled = true;
     try {
       await requestPasswordReset(emailInput.value);
+      block.classList.add("is-resetting");
+      panel.classList.remove("is-reset-done");
+      emailInput.readOnly = true;
+      if (heading) heading.textContent = "Reset password";
       confirmBlock.hidden = false;
       setStatus(status, "If that email has an account, we sent a code. Enter it with a new password.", true);
       codeInput.focus();
@@ -102,8 +133,11 @@ export function mountPasswordReset(block) {
       await confirmPasswordReset(emailInput.value, codeInput.value, nextInput.value);
       const signInError = block.querySelector(".auth-sign-error");
       if (signInError) signInError.textContent = "";
+      block.classList.remove("is-resetting");
+      panel.classList.add("is-reset-done");
+      emailInput.readOnly = false;
+      restoreHeading();
       confirmBlock.hidden = true;
-      sendBtn.hidden = true;
       codeInput.value = "";
       nextInput.value = "";
       againInput.value = "";
@@ -114,6 +148,15 @@ export function mountPasswordReset(block) {
     } finally {
       saveBtn.disabled = false;
     }
+  });
+
+  backBtn.addEventListener("click", () => {
+    codeInput.value = "";
+    nextInput.value = "";
+    againInput.value = "";
+    showRequest();
+    setStatus(status, "");
+    emailInput.focus();
   });
 }
 

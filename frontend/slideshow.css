@@ -188,6 +188,21 @@ footer { display: none; }
   color: #1e3a5f;
 }
 
+.auth-sign-block.is-resetting > :not(h3):not(input[type="email"]):not(.auth-reset-panel),
+.auth-sign-block.is-resetting .auth-reset-note,
+.auth-sign-block.is-resetting [data-reset-send],
+.auth-reset-panel.is-reset-done .auth-reset-note,
+.auth-reset-panel.is-reset-done [data-reset-send],
+.auth-reset-panel.is-reset-done [data-reset-confirm] {
+  display: none;
+}
+
+.auth-sign-block.is-resetting [data-reset-back] {
+  display: block;
+  width: fit-content;
+  margin-top: 0.75rem;
+}
+
 .auth-reset-panel .auth-password-row {
   position: relative;
   max-width: 420px;

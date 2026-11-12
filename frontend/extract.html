@@ -38,6 +38,13 @@
     #extract-signin .auth-reset-note { color: #475569; font-size: 0.82rem; line-height: 1.4; }
     #extract-signin .auth-reset-status { min-height: 1.25em; color: #e11d48; font-size: 0.85rem; }
     #extract-signin .auth-reset-status.auth-reset-ok { color: #1e3a5f; }
+    #extract-signin.is-resetting > :not(input[type="email"]):not(.auth-reset-panel),
+    #extract-signin.is-resetting .auth-reset-note,
+    #extract-signin.is-resetting [data-reset-send],
+    #extract-signin .auth-reset-panel.is-reset-done .auth-reset-note,
+    #extract-signin .auth-reset-panel.is-reset-done [data-reset-send],
+    #extract-signin .auth-reset-panel.is-reset-done [data-reset-confirm] { display: none; }
+    #extract-signin.is-resetting [data-reset-back] { display: block; width: fit-content; margin-top: 0.75rem; }
     main { max-width: 900px; margin: 0 auto; padding: 1rem; }
     main p { margin: 0; }
     img { display: block; width: 100%; height: auto; background: #fff; margin: 0 0 1rem; }
