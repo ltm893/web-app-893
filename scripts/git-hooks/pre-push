@@ -24,13 +24,13 @@ if [ "$saw_line" -eq 1 ] && [ "$saw_update" -eq 0 ]; then
   exit 0
 fi
 
-export PATH="/opt/homebrew/bin:${PATH:-/usr/bin:/bin}"
-if ! command -v node >/dev/null 2>&1 && [ -s "$HOME/.nvm/nvm.sh" ]; then
+if [ -s "$HOME/.nvm/nvm.sh" ]; then
   # shellcheck disable=SC1090
-  . "$HOME/.nvm/nvm.sh"
+  . "$HOME/.nvm/nvm.sh" >/dev/null
+  nvm use 20 >/dev/null 2>&1
 fi
 if ! command -v node >/dev/null 2>&1; then
-  echo "node is not on PATH, so the tests cannot run." >&2
+  echo "Node 20 is not available, so the tests cannot run." >&2
   exit 1
 fi
 
