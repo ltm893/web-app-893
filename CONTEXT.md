@@ -1,6 +1,6 @@
 # CONTEXT.md — web-app-893
 # Maintainer notes. Setup is in README.md.
-# Last updated: 2026-10-19
+# Last updated: 2026-11-12
 
 ## What this repo is
 Generic, cloneable web frontend add-on for cognito-s3-stack-893.
@@ -115,6 +115,10 @@ web-app-893/
 
 Fork this repo for a new domain. `dliv-web` is the dliv.com deployment of this template, not the repo to fork. Pushing this repo does not rebuild that site. Amplify clones `TEMPLATE_REF` only while building `dliv-web`. Rebuild that Amplify branch after the matching branch here is updated.
 
-All DLIV Users does not add, rename, or move files or folders. Mine uses **Move** to place a file or folder somewhere else in that account. Music, Photos, and Videos stay where they are. **Share on DLIV** copies a Music, Photos, or Videos file or album into a folder named for that account.
+All DLIV Users does not add files or folders. A video there can be renamed or moved inside Videos. Mine uses **Move** to place a file or folder somewhere else in that account. Music, Photos, and Videos stay where they are. **Share on DLIV** copies a Music, Photos, or Videos file or album into a folder named for that account.
+
+Forgot password is on the sign-in forms. Cognito emails a code, and the form then shows only the code and the new password. The email text is the verification template in `cognito-s3-stack-893`.
+
+`git push` runs `npm test` with Node 20. Install the hook once with `bash scripts/install-git-hooks.sh`. `SKIP_TESTS=1` skips it.
 
 PDF search and video convert stay off when `PDF_SEARCH_API_URL` and `VIDEO_CONVERT_API_URL` are blank.
