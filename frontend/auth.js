@@ -270,9 +270,11 @@ export function isAuthError(err) {
   return err instanceof AuthError && err.unauthorized;
 }
 
+const PASSWORD_RULES = "8 or more characters, with upper, lower, a number, and a symbol";
+
 export class NewPasswordRequired extends Error {
   constructor() {
-    super("Choose a new password to finish signing in. It needs 8 or more characters, with upper, lower, a number, and a symbol.");
+    super(`Choose a new password to finish signing in. It needs ${PASSWORD_RULES}.`);
     this.name = "NewPasswordRequired";
   }
 }
@@ -317,6 +319,82 @@ export async function signIn(email, password, newPassword = "") {
   }
 
   return storeAuthResult(data);
+}
+
+function friendlyResetError(err) {
+  const blob = `${err?.cognitoType || ""} ${err?.message || ""}`;
+  if (/cannot be reset in the current state/i.test(blob)) {
+    return "This account still uses the temporary password from the invite email. Sign in with that, then choose a new password.";
+  }
+  if (/CodeMismatchException|Username\/client id combination not found/i.test(blob)) {
+    return "That code doesn't match. Request a new one and try again.";
+  }
+  if (/ExpiredCodeException/i.test(blob)) return "That code expired. Request a new one.";
+  if (/InvalidPasswordException/i.test(blob)) return `Choose a stronger password. It needs ${PASSWORD_RULES}.`;
+  if (/LimitExceededException|TooManyRequestsException/i.test(blob)) {
+    return "Too many attempts. Wait a few minutes and try again.";
+  }
+  return String(err?.message || "Could not reset the password.");
+}
+
+function rethrowReset(err) {
+  const wrapped = new Error(friendlyResetError(err));
+  wrapped.cognitoType = err?.cognitoType || "";
+  throw wrapped;
+}
+
+/** Cognito hides missing accounts as this error when prevent-user-existence is on. */
+function isHiddenMissingUser(err) {
+  const blob = `${err?.cognitoType || ""} ${err?.message || ""}`;
+  return /UserNotFoundException/i.test(blob)
+    || /Username\/client id combination not found/i.test(blob);
+}
+
+export function passwordIsAcceptable(password) {
+  const value = String(password || "");
+  return value.length >= 8
+    && /[a-z]/.test(value)
+    && /[A-Z]/.test(value)
+    && /\d/.test(value)
+    && /[^A-Za-z0-9]/.test(value);
+}
+
+/** Email a Cognito reset code. An unknown address resolves the same way, so the form does not reveal which emails exist. */
+export async function requestPasswordReset(email) {
+  const username = String(email || "").trim();
+  if (!username) throw new Error("Enter the email for the account.");
+  const cfg = await getConfig();
+  try {
+    await cognitoRequest("ForgotPassword", {
+      ClientId: cfg.auth.user_pool_client_id,
+      Username: username,
+    });
+  } catch (err) {
+    if (isHiddenMissingUser(err)) return;
+    rethrowReset(err);
+  }
+}
+
+export async function confirmPasswordReset(email, code, password) {
+  const username = String(email || "").trim();
+  const confirmation = String(code || "").trim();
+  const next = String(password || "");
+  if (!username) throw new Error("Enter the email for the account.");
+  if (!confirmation) throw new Error("Enter the code from the email.");
+  if (!passwordIsAcceptable(next)) {
+    throw new Error(`Choose a stronger password. It needs ${PASSWORD_RULES}.`);
+  }
+  const cfg = await getConfig();
+  try {
+    await cognitoRequest("ConfirmForgotPassword", {
+      ClientId: cfg.auth.user_pool_client_id,
+      Username: username,
+      ConfirmationCode: confirmation,
+      Password: next,
+    });
+  } catch (err) {
+    rethrowReset(err);
+  }
 }
 
 export async function signOut() {

@@ -153,6 +153,76 @@ footer { display: none; }
   min-height: 1.25em;
 }
 
+.auth-reset-link {
+  display: inline-block;
+  margin: 0.15rem 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #1e3a5f;
+  font-family: Arial, sans-serif;
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.auth-reset-panel {
+  max-width: 420px;
+  margin-top: 0.35rem;
+}
+
+.auth-reset-note,
+.auth-reset-status {
+  margin: 0.35rem 0 0.5rem;
+  color: #475569;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.auth-reset-status {
+  min-height: 1.25em;
+  color: #e11d48;
+}
+
+.auth-reset-status.auth-reset-ok {
+  color: #1e3a5f;
+}
+
+.auth-sign-block.is-resetting > :not(h3):not(input[type="email"]):not(.auth-reset-panel),
+.auth-sign-block.is-resetting .auth-reset-note,
+.auth-sign-block.is-resetting [data-reset-send],
+.auth-reset-panel.is-reset-done .auth-reset-note,
+.auth-reset-panel.is-reset-done [data-reset-send],
+.auth-reset-panel.is-reset-done [data-reset-confirm] {
+  display: none;
+}
+
+.auth-sign-block.is-resetting [data-reset-back] {
+  display: block;
+  width: fit-content;
+  margin-top: 0.75rem;
+}
+
+.auth-reset-panel .auth-password-row {
+  position: relative;
+  max-width: 420px;
+}
+
+.auth-reset-panel .auth-password-row input {
+  padding-right: 3.2rem;
+}
+
+.auth-reset-panel .auth-show-pwd {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  user-select: none;
+}
+
 .apple-progress, .private-loading { padding: 1.35rem 0.5rem 1.15rem; text-align: center; }
 .apple-progress-label, .private-loading p {
   margin: 0 0 0.7rem; color: #64748b; font-size: 0.82rem; font-weight: 500; letter-spacing: 0.01em;

@@ -155,7 +155,9 @@
 
   <script type="module">
     import { applySiteChrome } from "./siteNav.js";
+    import { mountPasswordResets } from "./passwordReset.js";
     fetch("/dliv_outputs.json").then((r) => r.json()).then(applySiteChrome).catch(() => {});
+    mountPasswordResets();
   </script>
   <script type="module" src="./calendar.js"></script>
   <script>
