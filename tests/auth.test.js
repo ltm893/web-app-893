@@ -9,6 +9,8 @@ import {
   getVideoConvertApiUrl,
   resetAuthForTests,
   isNewPasswordRequired,
+  confirmPasswordReset,
+  requestPasswordReset,
   signIn,
   syncAncestryNav,
 } from "../frontend/auth.js";
@@ -316,6 +318,113 @@ test("a leftover dliv_rt cookie is cleared and is not used to stay signed in", a
   assert.equal(localStorage.getItem("refresh_token"), null);
   assert.equal(document.cookie.includes("cookie-refresh"), false);
   assert.equal(liveCookies().some((row) => row.startsWith("dliv_rt=")), false);
+});
+
+test("forgot password asks Cognito to email a code", async () => {
+  let target = "";
+  let body = null;
+  fetchImpl = async (url, options) => {
+    if (String(url).includes("dliv_outputs.json")) return jsonResponse(CONFIG);
+    if (String(url).includes("cognito-idp")) {
+      target = options.headers["X-Amz-Target"];
+      body = JSON.parse(options.body);
+      return jsonResponse({ CodeDeliveryDetails: { DeliveryMedium: "EMAIL" } });
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  };
+
+  await requestPasswordReset("  user@example.com ");
+  assert.equal(target, "AWSCognitoIdentityProviderService.ForgotPassword");
+  assert.deepEqual(body, { ClientId: "test-client", Username: "user@example.com" });
+});
+
+test("an unknown email still looks like a reset code was sent", async () => {
+  const replies = [
+    { __type: "UserNotFoundException", message: "User does not exist." },
+    { __type: "InvalidParameterException", message: "Username/client id combination not found." },
+  ];
+  for (const reply of replies) {
+    fetchImpl = async (url) => {
+      if (String(url).includes("dliv_outputs.json")) return jsonResponse(CONFIG);
+      if (String(url).includes("cognito-idp")) return jsonResponse(reply, 400);
+      throw new Error(`Unexpected fetch: ${url}`);
+    };
+    await requestPasswordReset("missing@example.com");
+  }
+});
+
+test("an invite that was never finished cannot use reset", async () => {
+  fetchImpl = async (url) => {
+    if (String(url).includes("dliv_outputs.json")) return jsonResponse(CONFIG);
+    if (String(url).includes("cognito-idp")) {
+      return jsonResponse({
+        __type: "NotAuthorizedException",
+        message: "User password cannot be reset in the current state.",
+      }, 400);
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  };
+
+  await assert.rejects(
+    requestPasswordReset("user@example.com"),
+    /temporary password from the invite email/
+  );
+});
+
+test("confirm password reset sends the code and new password", async () => {
+  let target = "";
+  let body = null;
+  fetchImpl = async (url, options) => {
+    if (String(url).includes("dliv_outputs.json")) return jsonResponse(CONFIG);
+    if (String(url).includes("cognito-idp")) {
+      target = options.headers["X-Amz-Target"];
+      body = JSON.parse(options.body);
+      return jsonResponse({});
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  };
+
+  await confirmPasswordReset("user@example.com", " 123456 ", "NewPass1!");
+  assert.equal(target, "AWSCognitoIdentityProviderService.ConfirmForgotPassword");
+  assert.deepEqual(body, {
+    ClientId: "test-client",
+    Username: "user@example.com",
+    ConfirmationCode: "123456",
+    Password: "NewPass1!",
+  });
+});
+
+test("a weak new password is rejected before Cognito", async () => {
+  let cognitoCalls = 0;
+  fetchImpl = async (url) => {
+    if (String(url).includes("dliv_outputs.json")) return jsonResponse(CONFIG);
+    if (String(url).includes("cognito-idp")) {
+      cognitoCalls += 1;
+      return jsonResponse({});
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  };
+
+  await assert.rejects(
+    confirmPasswordReset("user@example.com", "123456", "short"),
+    /stronger password/
+  );
+  assert.equal(cognitoCalls, 0);
+});
+
+test("a mismatched reset code is explained", async () => {
+  fetchImpl = async (url) => {
+    if (String(url).includes("dliv_outputs.json")) return jsonResponse(CONFIG);
+    if (String(url).includes("cognito-idp")) {
+      return jsonResponse({ __type: "CodeMismatchException", message: "Invalid code" }, 400);
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  };
+
+  await assert.rejects(
+    confirmPasswordReset("user@example.com", "000000", "NewPass1!"),
+    /doesn't match/
+  );
 });
 
 test("Ancestry stays disabled when PDF_SEARCH_API_URL is blank", async () => {

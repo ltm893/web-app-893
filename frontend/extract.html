@@ -24,6 +24,20 @@
       font: inherit;
     }
     #extract-signin button { background: #1e3a5f; color: #fff; border-color: #1e3a5f; }
+    #extract-signin button.auth-reset-link {
+      display: inline-block; margin: 0.15rem 0 0; padding: 0; border: 0; background: none;
+      color: #1e3a5f; font-size: 0.82rem; text-decoration: underline;
+    }
+    #extract-signin .auth-reset-panel { max-width: 22rem; }
+    #extract-signin .auth-password-row { position: relative; }
+    #extract-signin .auth-password-row input { padding-right: 3.2rem; }
+    #extract-signin .auth-show-pwd {
+      position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
+      cursor: pointer; font-size: 0.85rem; color: #94a3b8; user-select: none;
+    }
+    #extract-signin .auth-reset-note { color: #475569; font-size: 0.82rem; line-height: 1.4; }
+    #extract-signin .auth-reset-status { min-height: 1.25em; color: #e11d48; font-size: 0.85rem; }
+    #extract-signin .auth-reset-status.auth-reset-ok { color: #1e3a5f; }
     main { max-width: 900px; margin: 0 auto; padding: 1rem; }
     main p { margin: 0; }
     img { display: block; width: 100%; height: auto; background: #fff; margin: 0 0 1rem; }
@@ -55,6 +69,7 @@
   <script type="module">
     import { extractPrintItems, extractRemovePlan } from "./extractPages.js";
     import { authFetch, ensureSignedIn, getPdfSearchApiUrl, isNewPasswordRequired, signIn } from "./auth.js";
+    import { mountPasswordReset } from "./passwordReset.js";
     import { pdfSearchDisplayLabel } from "./siteNav.js";
 
     const items = extractPrintItems(location.hash);
@@ -62,6 +77,7 @@
     const status = document.getElementById("extract-status");
     const form = document.getElementById("extract-signin");
     const removeBtn = document.getElementById("remove");
+    mountPasswordReset(form);
 
     if (!items.length) {
       main.textContent = "This extract link has nothing to print.";
