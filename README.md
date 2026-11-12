@@ -6,12 +6,12 @@ This repo is the **template**. Fork it as `your-domain-web` (the dliv.com fork i
 
 `dliv-web` does not commit this frontend. Its Amplify build clones the branch in `TEMPLATE_REF` (`dev` by default, `main` on the dliv.com branch) and copies it into `frontend/`. A push here does not rebuild dev.dliv.com or dliv.com. Rebuild the Amplify branch whose `TEMPLATE_REF` is the branch you pushed. See `dliv-web` README, "Rebuilding after a web-app-893 change".
 
-No Amplify SDK. `auth.js` uses raw Cognito SRP. Tokens live in `localStorage` and stay after the browser restarts.
+No Amplify SDK. `auth.js` uses raw Cognito SRP. Tokens live in `localStorage` and stay after the browser restarts. **Forgot password** asks Cognito to email a code, then sends that code with a new password. After the email is sent, the form shows only the reset fields. An unknown email gets the same response as a known one. The new password needs 8 or more characters, with upper, lower, a number, and a symbol.
 
 ## Features
 
 - **Slideshows** — public albums from `dropbox-893` (`GET /albums`)
-- **Dropbox** — private files (Cognito JWT). All DLIV Users has no Add, Rename, or Move. From Mine, **Move** places a file or folder somewhere else in that account, and **Share on DLIV** copies a Music, Photos, or Videos file or album into a folder with that person's name.
+- **Dropbox** — private files (Cognito JWT). All DLIV Users has no Add. A video there can be renamed or moved to another folder under Videos. From Mine, **Move** places a file or folder somewhere else in that account, and **Share on DLIV** copies a Music, Photos, or Videos file or album into a folder with that person's name. Clip and Combine on an All DLIV Users video save the new MP4 in that folder when video convert is on.
 - **Calendar** — CRUD via `calendar-893`
 - **PDF Search** — shown when `PDF_SEARCH_API_URL` is set (`pdf-search-893`). Search, plus multipart S3 intake of PDFs into the docs bucket.
 
@@ -68,9 +68,12 @@ The build fails if `DROPBOX_API_URL` is missing or not an `https://` URL, or if 
 ## Local
 
 ```bash
+npm test
 cd frontend
 python3 -m http.server 8877
 ```
+
+`npm test` is `node --test tests/`. `git push` runs it first, using Node 20. A new clone needs `bash scripts/install-git-hooks.sh` once. `SKIP_TESTS=1 git push` skips the check. GitHub runs the same tests on a pull request and does not require them to pass.
 
 Copy `dliv_outputs.example.json` to `dliv_outputs.json` and fill in your outputs. That file is gitignored.
 
@@ -80,7 +83,8 @@ Copy `dliv_outputs.example.json` to `dliv_outputs.json` and fill in your outputs
 |------|------|
 | `frontend/index.html` | Slideshows, Dropbox, PDF Search |
 | `frontend/calendar.html` | Calendar |
-| `frontend/auth.js` | Cognito SRP |
+| `frontend/auth.js` | Cognito SRP, including forgot-password and confirm |
+| `frontend/passwordReset.js` | Reset form on the sign-in blocks |
 | `frontend/dliv_outputs.example.json` | Config schema |
 | `frontend/dliv_outputs.json` | Generated at build — gitignored |
 | `amplify.yml` | Amplify Hosting build |
