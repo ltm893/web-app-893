@@ -427,6 +427,57 @@ test("a mismatched reset code is explained", async () => {
   );
 });
 
+test("a blank email or code is rejected before Cognito", async () => {
+  let cognitoCalls = 0;
+  fetchImpl = async (url) => {
+    if (String(url).includes("dliv_outputs.json")) return jsonResponse(CONFIG);
+    if (String(url).includes("cognito-idp")) {
+      cognitoCalls += 1;
+      return jsonResponse({});
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  };
+
+  await assert.rejects(requestPasswordReset("   "), /Enter the email/);
+  await assert.rejects(confirmPasswordReset("  ", "123456", "NewPass1!"), /Enter the email/);
+  await assert.rejects(confirmPasswordReset("user@example.com", "  ", "NewPass1!"), /Enter the code/);
+  assert.equal(cognitoCalls, 0);
+});
+
+test("a long password still needs upper, lower, a number, and a symbol", async () => {
+  let cognitoCalls = 0;
+  fetchImpl = async (url) => {
+    if (String(url).includes("dliv_outputs.json")) return jsonResponse(CONFIG);
+    if (String(url).includes("cognito-idp")) {
+      cognitoCalls += 1;
+      return jsonResponse({});
+    }
+    throw new Error(`Unexpected fetch: ${url}`);
+  };
+
+  const weak = ["longpassword1!", "LONGPASSWORD1!", "Longpassword!", "Longpassword1"];
+  for (const password of weak) {
+    await assert.rejects(confirmPasswordReset("user@example.com", "123456", password), /stronger password/);
+  }
+  assert.equal(cognitoCalls, 0);
+});
+
+test("an expired code, too many attempts, and a rejected password are explained", async () => {
+  const cases = [
+    [{ __type: "ExpiredCodeException", message: "Invalid code provided, please request a code again." }, /expired/],
+    [{ __type: "LimitExceededException", message: "Attempt limit exceeded, please try after some time." }, /Too many attempts/],
+    [{ __type: "InvalidPasswordException", message: "Password does not conform to policy" }, /stronger password/],
+  ];
+  for (const [reply, pattern] of cases) {
+    fetchImpl = async (url) => {
+      if (String(url).includes("dliv_outputs.json")) return jsonResponse(CONFIG);
+      if (String(url).includes("cognito-idp")) return jsonResponse(reply, 400);
+      throw new Error(`Unexpected fetch: ${url}`);
+    };
+    await assert.rejects(confirmPasswordReset("user@example.com", "123456", "NewPass1!"), pattern);
+  }
+});
+
 test("Ancestry stays disabled when PDF_SEARCH_API_URL is blank", async () => {
   assert.equal(await isPdfSearchEnabled(), false);
   const nav = { hidden: false };
